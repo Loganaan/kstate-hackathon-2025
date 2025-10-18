@@ -85,9 +85,9 @@ Return exactly this JSON structure with NO additional text, markdown, or formatt
   ]
 }
 
-For multiple-choice questions: Include exactly 4 choices (A, B, C, D) with exactly ONE marked as correct: true.
-For coding questions: Include at least 2 test cases with clear input/output pairs and starter code.
-For free-response questions: Include explanation with evaluation criteria.`;
+For multiple-choice questions: Include exactly 4 choices (A, B, C, D) with exactly ONE marked as correct: true. The explanation should clarify why the correct answer is right.
+For coding questions: Include at least 2 test cases with clear input/output pairs and starter code. The explanation should describe constraints and edge cases.
+For free-response questions: Write the explanation in a conversational, practical style. Describe how YOU would solve it step-by-step, using concrete technologies and real examples. Say "I would use Redis for caching because..." not "Caching solutions include...". For system design, walk through the architecture naturally: "First I'd set up...", "Then for scaling I'd add...", "The database would be...". Make it sound like a senior engineer explaining their approach, not a grading rubric.`;
 
   return prompt;
 }
@@ -109,7 +109,22 @@ function getFormatInstructions(format: string): string {
 - Solution outline describing the approach`;
     
     case 'free-response':
-      return `Format: Generate open-ended questions that require written explanations. Include evaluation criteria in the explanation field.`;
+      return `Format: Generate open-ended questions that require written explanations (e.g., system design, architecture decisions, trade-offs). 
+
+For the explanation field - CRITICAL INSTRUCTIONS:
+- Write a conversational, practical explanation of how you would actually solve this problem
+- Start with a high-level approach, then dive into specifics
+- Use concrete examples and real technologies (Redis, Kafka, PostgreSQL, etc.)
+- Explain the "why" behind decisions, not just the "what"
+- For system design: Walk through the architecture like you're whiteboarding with a colleague
+  * "First, I'd start with X because..."
+  * "The key components would be..."
+  * "For handling Y, I'd use Z because..."
+  * Include diagrams descriptions, data flow, specific services
+- Avoid listing abstract concepts or bullet-point checklists
+- Instead of "A good answer should cover:" write "Here's how I'd approach this:"
+- Make it sound like a senior engineer explaining their solution, not an evaluation rubric
+- Be specific about implementation details, technologies, and trade-offs`;
     
     case 'mixed':
       return `Format: Generate a mix of question types (multiple-choice, coding, and free-response). Vary the formats across the questions. Each question should follow the format requirements for its type.`;
