@@ -5,11 +5,11 @@
 
 import { NextRequest } from 'next/server';
 import { ZodError } from 'zod';
-import { CreateQuestionsRequestSchema, GetQuestionsQuerySchema } from '@/lib/schemas';
-import { generateQuestions } from '@/lib/gemini-client';
-import { saveQuestion, getQuestions } from '@/lib/store';
-import { checkRateLimit } from '@/lib/rate-limit';
-import { getClientIP, paginate } from '@/lib/util';
+import { CreateQuestionsRequestSchema, GetQuestionsQuerySchema } from '@/lib/technical/schemas';
+import { generateQuestions } from '@/lib/technical/gemini-client';
+import { saveQuestion, getQuestions } from '@/lib/technical/store';
+import { checkRateLimit } from '@/lib/technical/rate-limit';
+import { getClientIP, paginate } from '@/lib/technical/util';
 import {
   unauthorizedResponse,
   validationErrorResponse,
@@ -18,7 +18,7 @@ import {
   geminiErrorResponse,
   internalErrorResponse,
   logError
-} from '@/lib/errors';
+} from '@/lib/technical/errors';
 
 // Use edge runtime if compatible
 // export const runtime = 'edge';

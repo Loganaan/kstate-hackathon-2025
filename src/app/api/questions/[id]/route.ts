@@ -5,10 +5,10 @@
 
 import { NextRequest } from 'next/server';
 import { ZodError } from 'zod';
-import { UpdateQuestionRequestSchema, ChoiceSchema } from '@/lib/schemas';
-import { getQuestion, updateQuestion, deleteQuestion } from '@/lib/store';
-import { checkRateLimit } from '@/lib/rate-limit';
-import { getClientIP } from '@/lib/util';
+import { UpdateQuestionRequestSchema, ChoiceSchema } from '@/lib/technical/schemas';
+import { getQuestion, updateQuestion, deleteQuestion } from '@/lib/technical/store';
+import { checkRateLimit } from '@/lib/technical/rate-limit';
+import { getClientIP } from '@/lib/technical/util';
 import {
   unauthorizedResponse,
   validationErrorResponse,
@@ -16,7 +16,7 @@ import {
   notFoundResponse,
   internalErrorResponse,
   logError
-} from '@/lib/errors';
+} from '@/lib/technical/errors';
 
 // Use edge runtime if compatible
 // export const runtime = 'edge';
