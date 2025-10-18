@@ -1,5 +1,7 @@
 import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
+import SideButtons from "../components/SideButtons";
+
 import "./globals.css";
 import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
@@ -30,18 +32,13 @@ export default function RootLayout({
       <body
         className={`${geistSans.variable} ${geistMono.variable} antialiased flex flex-col min-h-screen`}
       >
-        <ThemeProvider
-          attribute="class"
-          defaultTheme="system"
-          enableSystem
-          disableTransitionOnChange
-        >
-          <Navbar />
-          <main className="flex-grow">
-            {children}
-          </main>
-          <Footer />
-        </ThemeProvider>
+        <SideButtons />
+        <div className="w-full flex justify-center mt-0 sticky top-0 z-50 py-2 bg-white" style={{ background: '#fff' }}>
+          <img src="/images/TechReady.png" alt="TechReady Logo" className="h-16 object-contain" />
+        </div>
+        <main>
+          {children}
+        </main>
       </body>
     </html>
   );
