@@ -1,191 +1,266 @@
 'use client';
 
-import { useState } from 'react';
-import { Play, RotateCcw, Send, Terminal } from 'lucide-react';
-import Button from '@/components/Button';
+import { useState, useEffect, useRef } from 'react';
+import SessionHeader from './components/SessionHeader';
+import ProblemPanel from './components/ProblemPanel';
+import CodeEditor from './components/CodeEditor';
+import ConsoleOutput from './components/ConsoleOutput';
+import ProctorModal from './components/ProctorModal';
+import ProctorHintBox from './components/ProctorHintBox';
+import StatusBar from './components/StatusBar';
+
+// Mock problem data
+const MOCK_PROBLEM = {
+  title: 'Two Sum',
+  difficulty: 'Easy',
+  description:
+    'Given an array of integers nums and an integer target, return indices of the two numbers such that they add up to target. You may assume that each input would have exactly one solution, and you may not use the same element twice.',
+  examples: [
+    {
+      input: 'nums = [2,7,11,15], target = 9',
+      output: '[0,1]',
+      explanation: "Because nums[0] + nums[1] == 9, we return [0, 1].",
+    },
+    {
+      input: 'nums = [3,2,4], target = 6',
+      output: '[1,2]',
+      explanation: "Because nums[1] + nums[2] == 6, we return [1, 2].",
+    },
+  ],
+  constraints: [
+    '2 ≤ nums.length ≤ 10⁴',
+    '-10⁹ ≤ nums[i] ≤ 10⁹',
+    '-10⁹ ≤ target ≤ 10⁹',
+    'Only one valid answer exists',
+  ],
+  starterCode: {
+    javascript: `function twoSum(nums, target) {\n    // TODO: Write your solution here\n    \n}`,
+    python: `def two_sum(nums, target):\n    # TODO: Write your solution here\n    pass`,
+    java: `class Solution {\n    public int[] twoSum(int[] nums, int target) {\n        // TODO: Write your solution here\n        \n    }\n}`,
+  },
+};
 
 export default function TechnicalInterviewPage() {
-  const [code, setCode] = useState(`function twoSum(nums, target) {
-  // TODO: Implement your solution here
-  
-}`);
+  // Editor state
+  const [language, setLanguage] = useState<'javascript' | 'python' | 'java'>('javascript');
+  const [code, setCode] = useState(MOCK_PROBLEM.starterCode.javascript);
 
-  const placeholderQuestion = "Write a function that takes an array of integers and a target value, then returns the indices of two numbers that add up to the target.";
+  // Session state
+  const [isRunning, setIsRunning] = useState(false);
+  const [isFetchingFeedback, setIsFetchingFeedback] = useState(false);
+  const [output, setOutput] = useState<string>('');
+  const [feedback, setFeedback] = useState<string>('');
+  const [testResults, setTestResults] = useState<
+    Array<{ passed: boolean; input: string; expected: string; actual: string }>
+  >([]);
+  const [activeTab, setActiveTab] = useState<'question' | 'feedback'>('question');
+
+  // AI Proctor mode
+  const [liveProctorMode, setLiveProctorMode] = useState(false);
+  const [proctorHints, setProctorHints] = useState<string[]>([]);
+  const [showProctorModal, setShowProctorModal] = useState(false);
+  const proctorIntervalRef = useRef<NodeJS.Timeout | null>(null);
+
+  // Timer
+  const [timeElapsed, setTimeElapsed] = useState(0);
+  const timerIntervalRef = useRef<NodeJS.Timeout | null>(null);
+
+  // Start timer on mount
+  useEffect(() => {
+    timerIntervalRef.current = setInterval(() => {
+      setTimeElapsed((prev) => prev + 1);
+    }, 1000);
+
+    return () => {
+      if (timerIntervalRef.current) {
+        clearInterval(timerIntervalRef.current);
+      }
+    };
+  }, []);
+
+  // Live Proctor Mode simulation
+  useEffect(() => {
+    if (liveProctorMode) {
+      const hints = [
+        '💡 AI Proctor: Consider using a hash map for O(n) time complexity',
+        '👀 AI Proctor: Remember to check for edge cases',
+        '🎯 AI Proctor: Your approach looks good! Keep going',
+        '⚡ AI Proctor: Try to optimize your solution for better performance',
+        "✨ AI Proctor: Don't forget to handle negative numbers",
+      ];
+
+      let hintIndex = 0;
+      proctorIntervalRef.current = setInterval(() => {
+        setProctorHints((prev) => [...prev, hints[hintIndex % hints.length]]);
+        hintIndex++;
+      }, 8000); // New hint every 8 seconds
+
+      return () => {
+        if (proctorIntervalRef.current) {
+          clearInterval(proctorIntervalRef.current);
+        }
+      };
+    } else {
+      setProctorHints([]);
+      if (proctorIntervalRef.current) {
+        clearInterval(proctorIntervalRef.current);
+      }
+    }
+  }, [liveProctorMode]);
+
+  // Handle language change
+  const handleLanguageChange = (newLang: 'javascript' | 'python' | 'java') => {
+    setLanguage(newLang);
+    setCode(MOCK_PROBLEM.starterCode[newLang]);
+    setOutput('');
+    setTestResults([]);
+  };
+
+  // Handle Run Code (TODO: Connect to backend)
+  const handleRunCode = async () => {
+    setIsRunning(true);
+    setOutput('Running code...');
+
+    // Simulate running code
+    setTimeout(() => {
+      const mockResults = [
+        { passed: true, input: '[2,7,11,15], 9', expected: '[0,1]', actual: '[0,1]' },
+        { passed: true, input: '[3,2,4], 6', expected: '[1,2]', actual: '[1,2]' },
+        { passed: false, input: '[3,3], 6', expected: '[0,1]', actual: '[]' },
+      ];
+
+      setTestResults(mockResults);
+      setOutput(
+        `✓ Test 1 passed\n✓ Test 2 passed\n✗ Test 3 failed\n\nExpected: [0,1]\nActual: []`
+      );
+      setIsRunning(false);
+    }, 1500);
+  };
+
+  // Handle Request Feedback (TODO: Connect to AI backend)
+  const handleRequestFeedback = async () => {
+    setIsFetchingFeedback(true);
+    setActiveTab('feedback'); // Switch to feedback tab
+    setFeedback('Fetching AI feedback...');
+
+    // Simulate AI feedback
+    setTimeout(() => {
+      const mockFeedback = `**Code Analysis:**
+
+✅ **Strengths:**
+- Clean and readable code structure
+- Good variable naming
+
+⚠️ **Areas for Improvement:**
+- Current approach has O(n²) time complexity due to nested loops
+- Consider using a hash map for O(n) optimization
+- Edge case handling for duplicate values could be improved
+
+💡 **Optimization Suggestion:**
+Use a single pass with a hash map to store complements:
+1. Iterate through the array once
+2. For each number, check if (target - number) exists in the map
+3. If found, return the indices; otherwise, add current number to map
+
+**Complexity:**
+- Time: O(n²) → Can be optimized to O(n)
+- Space: O(1) → Would become O(n) with hash map
+
+Keep up the good work! Try implementing the hash map approach for better performance.`;
+
+      setFeedback(mockFeedback);
+      setIsFetchingFeedback(false);
+    }, 2000);
+  };
+
+  // Handle Reset
+  const handleReset = () => {
+    setCode(MOCK_PROBLEM.starterCode[language]);
+    setOutput('');
+    setFeedback('');
+    setTestResults([]);
+  };
+
+  // Handle Toggle Proctor
+  const handleToggleProctor = () => {
+    if (liveProctorMode) {
+      handleStopProctor();
+    } else {
+      setShowProctorModal(true);
+    }
+  };
+
+  // Handle Start Proctor Session
+  const handleStartProctor = () => {
+    setLiveProctorMode(true);
+    setShowProctorModal(false);
+  };
+
+  // Handle Stop Proctor Session
+  const handleStopProctor = () => {
+    setLiveProctorMode(false);
+    setProctorHints([]);
+  };
 
   return (
-    <div className="bg-gray-50 dark:bg-gray-950 min-h-[calc(100vh-8rem)]">
+    <div className="bg-gray-50 dark:bg-gray-950 min-h-screen pl-20">
       {/* Header */}
-      <div className="bg-white dark:bg-gray-900 border-b border-gray-200 dark:border-gray-800">
-        <div className="max-w-full px-4 sm:px-6 lg:px-8 py-4">
-          <div className="flex justify-between items-center">
-            <div>
-              <h1 className="text-2xl font-semibold text-gray-900 dark:text-gray-100">Technical Interview Session</h1>
-              <p className="text-gray-600 dark:text-gray-400 mt-1">Problem 1 of 3</p>
-            </div>
-            
-            {/* Top Toolbar */}
-            <div className="flex gap-3">
-              <Button variant="secondary" className="flex items-center gap-2">
-                <Play className="w-4 h-4" />
-                Run Code
-              </Button>
-              <Button className="flex items-center gap-2">
-                <Send className="w-4 h-4" />
-                Submit
-              </Button>
-              <Button variant="secondary" className="flex items-center gap-2">
-                <RotateCcw className="w-4 h-4" />
-                Reset
-              </Button>
-            </div>
-          </div>
-        </div>
-      </div>
+      <SessionHeader
+        title={MOCK_PROBLEM.title}
+        difficulty={MOCK_PROBLEM.difficulty}
+        timeElapsed={timeElapsed}
+        liveProctorMode={liveProctorMode}
+        onToggleProctor={handleToggleProctor}
+      />
 
-      {/* Main Content */}
-      <div className="h-[calc(100vh-16rem)]">
-        <div className="grid lg:grid-cols-2 gap-0 h-full">
-          
-          {/* Left Panel - Problem Description & Code Editor */}
-          <div className="flex flex-col bg-white dark:bg-gray-800 border-r border-gray-200 dark:border-gray-700">
-            
-            {/* Problem Description */}
-            <div className="border-b border-gray-200 dark:border-gray-700 p-6 overflow-y-auto max-h-64">
-              <h2 className="text-lg font-semibold text-gray-800 dark:text-gray-100 mb-4">Problem: Two Sum</h2>
-              <p className="text-gray-700 dark:text-gray-300 leading-relaxed mb-4">
-                {placeholderQuestion}
-              </p>
-              
-              {/* Examples */}
-              <div className="space-y-3">
-                <div className="bg-gray-50 dark:bg-gray-900 rounded-lg p-4 font-mono text-sm">
-                  <div className="text-gray-600 dark:text-gray-400 mb-2">Example 1:</div>
-                  <div className="text-gray-800 dark:text-gray-200">
-                    Input: nums = [2,7,11,15], target = 9<br/>
-                    Output: [0,1]<br/>
-                    Explanation: nums[0] + nums[1] = 2 + 7 = 9
-                  </div>
-                </div>
-                
-                <div className="bg-gray-50 dark:bg-gray-900 rounded-lg p-4 font-mono text-sm">
-                  <div className="text-gray-600 dark:text-gray-400 mb-2">Example 2:</div>
-                  <div className="text-gray-800 dark:text-gray-200">
-                    Input: nums = [3,2,4], target = 6<br/>
-                    Output: [1,2]
-                  </div>
-                </div>
-              </div>
+      {/* AI Proctor Floating Box */}
+      <ProctorHintBox hints={proctorHints} isActive={liveProctorMode} />
 
-              {/* Constraints */}
-              <div className="mt-4">
-                <h3 className="font-semibold text-gray-800 dark:text-gray-100 mb-2">Constraints:</h3>
-                <ul className="text-sm text-gray-600 dark:text-gray-400 space-y-1">
-                  <li>• 2 ≤ nums.length ≤ 10⁴</li>
-                  <li>• -10⁹ ≤ nums[i] ≤ 10⁹</li>
-                  <li>• -10⁹ ≤ target ≤ 10⁹</li>
-                  <li>• Only one valid answer exists</li>
-                </ul>
-              </div>
-            </div>
+      {/* AI Proctor Start Modal */}
+      <ProctorModal
+        isOpen={showProctorModal}
+        onClose={() => setShowProctorModal(false)}
+        onStart={handleStartProctor}
+      />
 
-            {/* Code Editor Area */}
-            <div className="flex-1 flex flex-col">
-              <div className="bg-gray-800 dark:bg-gray-950 px-4 py-2 flex items-center justify-between">
-                <span className="text-gray-300 text-sm font-mono">solution.js</span>
-                <select className="bg-gray-700 dark:bg-gray-900 text-gray-300 text-sm rounded px-2 py-1 border-none focus:ring-2 focus:ring-blue-500">
-                  <option>JavaScript</option>
-                  <option>Python</option>
-                  <option>Java</option>
-                  <option>C++</option>
-                </select>
-              </div>
-              
-              <textarea
-                value={code}
-                onChange={(e) => setCode(e.target.value)}
-                className="flex-1 bg-gray-900 dark:bg-black text-gray-100 font-mono text-sm p-4 focus:outline-none resize-none"
-                spellCheck={false}
-                style={{ 
-                  tabSize: 2,
-                  fontFamily: 'ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace'
-                }}
-              />
-            </div>
-          </div>
+      {/* Main Content - 3 Panel Layout */}
+      <div className="grid lg:grid-cols-2 gap-0" style={{ height: 'calc(100vh - 10rem)' }}>
+        {/* Left Panel - Problem Description with Tabs */}
+        <ProblemPanel
+          problem={MOCK_PROBLEM}
+          activeTab={activeTab}
+          onTabChange={setActiveTab}
+          feedback={feedback}
+          isFetchingFeedback={isFetchingFeedback}
+        />
 
-          {/* Right Panel - AI Feedback & Console */}
-          <div className="flex flex-col bg-gray-50 dark:bg-gray-950">
-            
-            {/* AI Feedback Section */}
-            <div className="flex-1 p-6 overflow-y-auto">
-              <h2 className="text-lg font-semibold text-gray-800 dark:text-gray-100 mb-4">AI Feedback</h2>
-              
-              <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm p-6 border border-gray-200 dark:border-gray-700">
-                <div className="flex items-start gap-3">
-                  <div className="bg-blue-100 dark:bg-blue-900/50 p-2 rounded-lg">
-                    <Terminal className="w-5 h-5 text-blue-600 dark:text-blue-400" />
-                  </div>
-                  <div className="flex-1">
-                    <p className="text-gray-500 dark:text-gray-400 italic">
-                      {/* TODO: Integrate AI feedback */}
-                      AI feedback will appear here after you run or submit your code. 
-                      You&apos;ll receive insights on:
-                    </p>
-                    <ul className="mt-3 space-y-2 text-sm text-gray-600 dark:text-gray-400">
-                      <li>• Time and space complexity analysis</li>
-                      <li>• Code quality and best practices</li>
-                      <li>• Alternative approaches</li>
-                      <li>• Common edge cases to consider</li>
-                    </ul>
-                  </div>
-                </div>
-              </div>
+        {/* Right Panel - Code Editor (top) & Console (bottom) */}
+        <div className="flex flex-col bg-gray-50 dark:bg-gray-950 overflow-hidden">
+          {/* Code Editor Section */}
+          <CodeEditor
+            language={language}
+            code={code}
+            onCodeChange={setCode}
+            onLanguageChange={handleLanguageChange}
+            onRunCode={handleRunCode}
+            onRequestFeedback={handleRequestFeedback}
+            onReset={handleReset}
+            isRunning={isRunning}
+            isFetchingFeedback={isFetchingFeedback}
+          />
 
-              {/* Hints Section */}
-              <div className="mt-6">
-                <details className="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700">
-                  <summary className="p-4 cursor-pointer font-semibold text-gray-800 dark:text-gray-100 hover:bg-gray-50 dark:hover:bg-gray-700 rounded-xl">
-                    💡 Need a hint?
-                  </summary>
-                  <div className="p-4 pt-0 text-gray-600 dark:text-gray-400">
-                    <p className="text-sm">
-                      Try using a hash map to store the numbers you&apos;ve seen and their indices. 
-                      For each number, check if the complement (target - current number) exists in the map.
-                    </p>
-                  </div>
-                </details>
-              </div>
-            </div>
-
-            {/* Console Output Section */}
-            <div className="border-t border-gray-300 dark:border-gray-700">
-              <div className="bg-gray-800 dark:bg-gray-950 px-4 py-2 flex items-center gap-2">
-                <Terminal className="w-4 h-4 text-gray-400" />
-                <span className="text-gray-300 text-sm font-semibold">Console</span>
-              </div>
-              
-              <div className="bg-gray-900 dark:bg-black p-4 h-48 overflow-y-auto font-mono text-sm">
-                <div className="text-green-400">
-                  {/* TODO: Actual console output */}
-                  <p className="text-gray-500">{'//'} Output will appear here when you run your code</p>
-                </div>
-              </div>
-            </div>
-          </div>
+          {/* Console / Test Results Section */}
+          <ConsoleOutput testResults={testResults} output={output} />
         </div>
       </div>
 
       {/* Bottom Status Bar */}
-      <div className="bg-white dark:bg-gray-900 border-t border-gray-200 dark:border-gray-800 px-4 sm:px-6 lg:px-8 py-3">
-        <div className="flex justify-between items-center text-sm">
-          <div className="text-gray-600 dark:text-gray-400">
-            Time Elapsed: <span className="font-semibold">12:45</span>
-          </div>
-          <div className="text-gray-600 dark:text-gray-400">
-            Test Cases Passed: <span className="font-semibold text-green-600 dark:text-green-400">0 / 5</span>
-          </div>
-        </div>
-      </div>
+      <StatusBar
+        language={language}
+        testsPassed={testResults.filter((t) => t.passed).length}
+        totalTests={testResults.length || 5}
+        liveProctorMode={liveProctorMode}
+      />
     </div>
   );
 }

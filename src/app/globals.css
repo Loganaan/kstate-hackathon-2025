@@ -32,3 +32,12 @@ body {
   font-family: Arial, Helvetica, sans-serif;
   transition: background-color 0.2s ease-in-out, color 0.2s ease-in-out;
 }
+
+/* Animation delays for loading indicators */
+.delay-100 {
+  animation-delay: 0.1s;
+}
+
+.delay-200 {
+  animation-delay: 0.2s;
+}
