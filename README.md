@@ -1,36 +1,87 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# AI Interview Coach
 
-## Getting Started
+An intelligent interview simulation platform built with Next.js 15 that helps users practice and improve their interview skills through AI-powered conversations, real-time feedback, and performance analytics.
 
-First, run the development server:
+## 🚀 Features
 
+- **AI-Powered Interviews**: Realistic interview simulations using Google Gemini AI
+- **Real-time Feedback**: Instant scoring and suggestions during interviews
+- **Audio & Video Recording**: Full interview recording with webcam integration
+- **Text-to-Speech**: Natural AI interviewer voice using ElevenLabs
+- **Performance Analytics**: Detailed dashboards with improvement insights
+- **Responsive Design**: Works seamlessly on desktop, tablet, and mobile
+
+## 🛠️ Tech Stack
+
+- **Framework**: Next.js 15 with App Router
+- **Language**: TypeScript
+- **Styling**: Tailwind CSS
+- **AI Integration**: Google Gemini API
+- **Text-to-Speech**: ElevenLabs API
+- **Database**: Firebase Firestore
+- **Authentication**: Firebase Auth
+- **File Storage**: Firebase Cloud Storage
+
+## 📦 Installation
+
+1. Clone the repository:
+```bash
+git clone https://github.com/yourusername/ai-interview-coach.git
+cd ai-interview-coach
+```
+
+2. Install dependencies:
+```bash
+npm install
+# or
+yarn install
+# or
+pnpm install
+```
+
+3. Set up environment variables:
+```bash
+cp .env.example .env
+```
+Edit `.env` and add your API keys and configuration values.
+
+4. Run the development server:
 ```bash
 npm run dev
 # or
 yarn dev
 # or
 pnpm dev
-# or
-bun dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+Open [http://localhost:3000](http://localhost:3000) to view the application.
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+## 🔧 Configuration
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+### Required API Keys
 
-## Learn More
+1. **Google Gemini API**: Get your key from [Google AI Studio](https://makersuite.google.com/)
+2. **ElevenLabs API**: Sign up at [ElevenLabs](https://elevenlabs.io/) for text-to-speech
+3. **Firebase**: Create a project at [Firebase Console](https://console.firebase.google.com/)
 
-To learn more about Next.js, take a look at the following resources:
+### Environment Variables
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+See `.env.local` for all required environment variables and their descriptions.
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+## 📁 Project Structure
 
-## Deploy on Vercel
-
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
-
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+```
+📦 ai-interview-coach/
+├── 📁 app/                           # Next.js App Router
+│   ├── layout.tsx                    # Global layout and navbar
+│   ├── page.tsx                      # Landing page
+│   ├── 📁 interview/                 # Interview simulation
+│   ├── 📁 dashboard/                 # Results dashboard
+│   └── 📁 api/                       # API routes
+├── 📁 components/                    # Shared UI components
+├── 📁 lib/                           # API wrappers and utilities
+├── 📁 types/                         # TypeScript type definitions
+├── 📁 hooks/                         # Custom React hooks
+├── 📁 styles/                        # CSS styles
+└── 📁 public/                        # Static assets
+```
