@@ -181,7 +181,7 @@ export default function InterviewSetup({ onSubmit, loading, error }: InterviewSe
             <button
               type="submit"
               disabled={loading}
-              className="w-full bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white font-semibold py-4 px-6 rounded-lg disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200 shadow-lg hover:shadow-xl"
+              className="w-full bg-[rgba(76,166,38,1)] hover:bg-[rgba(76,166,38,0.9)] text-white font-semibold py-3 px-6 rounded-lg disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200 shadow-md hover:shadow-lg"
             >
               {loading ? (
                 <span className="flex items-center justify-center gap-2">
@@ -208,7 +208,7 @@ export default function InterviewSetup({ onSubmit, loading, error }: InterviewSe
                   Generating Questions with AI...
                 </span>
               ) : (
-                '🚀 Start Technical Interview'
+                'Start Technical Interview'
               )}
             </button>
           </form>
