@@ -32,13 +32,15 @@ export default function RootLayout({
       <body
         className={`${geistSans.variable} ${geistMono.variable} antialiased flex flex-col min-h-screen`}
       >
-        <SideButtons />
-        <div className="w-full flex justify-center mt-0 sticky top-0 z-50 py-2 bg-white" style={{ background: '#fff' }}>
-          <img src="/images/TechReady.png" alt="TechReady Logo" className="h-16 object-contain" />
-        </div>
-        <main>
-          {children}
-        </main>
+        <ThemeProvider attribute="class" defaultTheme="system" enableSystem>
+          <SideButtons />
+          <div className="w-full flex justify-center mt-0 sticky top-0 z-50 py-2 bg-white dark:bg-gray-900 transition-colors" style={{ background: undefined }}>
+            <img src="/images/TechReady.png" alt="TechReady Logo" className="h-16 object-contain" />
+          </div>
+          <main>
+            {children}
+          </main>
+        </ThemeProvider>
       </body>
     </html>
   );
