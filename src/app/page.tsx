@@ -11,7 +11,7 @@ export default function Home() {
   const [headerTypedText, setHeaderTypedText] = useState("");
   const [spinCount, setSpinCount] = useState(0);
   const splashText = "Welcome to TechReady";
-  const headerText = "Ready to start interview prep?";
+  const headerText = "Ready to start your interview prep?";
 
   const handleFlowerClick = () => {
     setSpinCount(prev => prev + 1);
