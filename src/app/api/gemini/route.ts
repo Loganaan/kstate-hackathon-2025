@@ -7,7 +7,7 @@ import { GeminiClient } from '@/lib/gemini';
 
 export async function POST(request: NextRequest) {
   try {
-    const { messages } = await request.json();
+    const { messages, params } = await request.json();
 
     // Get API key from environment variable
     const apiKey = process.env.GEMINI_API_KEY;
@@ -93,7 +93,7 @@ Please provide:
 Be constructive, encouraging, and specific in your feedback.`
       };
 
-      const response = await geminiClient.chat([feedbackSystemMessage, ...messages]);
+      const response = await geminiClient.chat([feedbackSystemMessage, ...messages], params);
       return NextResponse.json({ response, interviewComplete: true });
     }
     
@@ -117,7 +117,7 @@ Keep main questions focused on behavioral scenarios using the STAR method. Be en
       ...messages
     ];
     
-    const response = await geminiClient.chat(modifiedMessages);
+    const response = await geminiClient.chat(modifiedMessages, params);
     return NextResponse.json({ response });
   } catch (error) {
     console.error('Error in Gemini API route:', error);

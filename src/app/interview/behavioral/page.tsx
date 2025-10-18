@@ -6,6 +6,7 @@ import Button from '@/components/Button';
 import ChatMessage from './components/ChatMessage';
 import SessionCard from './components/SessionCard';
 import LivePracticeModal from './components/LivePracticeModal';
+import NewSessionModal, { SessionParams } from './components/NewSessionModal';
 import ChatInput from './components/ChatInput';
 
 interface Message {
@@ -22,6 +23,7 @@ interface ChatSession {
   timestamp: Date;
   messageCount: number;
   messages: Message[];
+  params?: SessionParams;
 }
 
 export default function BehavioralInterviewPage() {
@@ -29,16 +31,9 @@ export default function BehavioralInterviewPage() {
   const [activeSessionId, setActiveSessionId] = useState<string>('');
   const [inputMessage, setInputMessage] = useState('');
   const [showLiveModal, setShowLiveModal] = useState(false);
+  const [showNewSessionModal, setShowNewSessionModal] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
-
-  // Initialize with first session
-  useEffect(() => {
-    if (sessions.length === 0) {
-      createNewSession();
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
 
   // Auto-scroll to bottom when messages change
   useEffect(() => {
@@ -98,7 +93,7 @@ export default function BehavioralInterviewPage() {
   };
 
   // Generate first question for a new session
-  const generateFirstQuestion = async (): Promise<Message> => {
+  const generateFirstQuestion = async (params?: SessionParams): Promise<Message> => {
     try {
       const response = await fetch('/api/gemini', {
         method: 'POST',
@@ -112,6 +107,7 @@ export default function BehavioralInterviewPage() {
               content: 'You are starting a behavioral interview. Generate ONE concise behavioral interview question about a past experience (teamwork, leadership, challenges, or problem-solving). Only output the question itself, nothing else. Make it specific and actionable.'
             }
           ],
+          params,
         }),
       });
 
@@ -178,6 +174,7 @@ export default function BehavioralInterviewPage() {
             content: msg.content,
           })),
           interviewType: 'behavioral',
+          params: currentSession.params,
         }),
       });
 
@@ -235,19 +232,30 @@ export default function BehavioralInterviewPage() {
     }
   };
 
-  const createNewSession = async () => {
+  const createNewSession = async (params?: SessionParams) => {
     setIsLoading(true);
     
-    // Generate first question
-    const firstQuestion = await generateFirstQuestion();
+    // Generate first question with parameters
+    const firstQuestion = await generateFirstQuestion(params);
+    
+    // Create a title based on the parameters
+    let title = `Session ${sessions.length + 1}`;
+    if (params?.role && params?.company) {
+      title = `${params.role} at ${params.company}`;
+    } else if (params?.role) {
+      title = params.role;
+    } else if (params?.company) {
+      title = params.company;
+    }
     
     const newSession: ChatSession = {
       id: Date.now().toString(),
-      title: `Session ${sessions.length + 1}`,
+      title,
       lastMessage: firstQuestion.content,
       timestamp: new Date(),
       messageCount: 1,
-      messages: [firstQuestion]
+      messages: [firstQuestion],
+      params
     };
     
     setSessions(prevSessions => [newSession, ...prevSessions]);
@@ -275,7 +283,7 @@ export default function BehavioralInterviewPage() {
               <Button
                 variant="primary"
                 className="flex items-center gap-2 text-sm bg-[rgba(76,166,38,1)] hover:bg-[rgba(76,166,38,0.9)]"
-                onClick={createNewSession}
+                onClick={() => setShowNewSessionModal(true)}
               >
                 <Plus className="w-4 h-4" />
                 New
@@ -339,26 +347,50 @@ export default function BehavioralInterviewPage() {
 
           {/* Messages Area */}
           <div className="flex-1 overflow-y-auto p-6 space-y-4 bg-gray-50 dark:bg-gray-950">
-            {messages.map((message) => (
-              <ChatMessage
-                key={message.id}
-                role={message.role}
-                content={message.content}
-                timestamp={message.timestamp}
-              />
-            ))}
-            {isLoading && (
-              <div className="flex justify-start">
-                <div className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-2xl px-4 py-3">
-                  <div className="flex space-x-1">
-                    <div className="w-2 h-2 bg-gray-600 dark:bg-gray-400 rounded-full animate-bounce"></div>
-                    <div className="w-2 h-2 bg-gray-600 dark:bg-gray-400 rounded-full animate-bounce delay-100"></div>
-                    <div className="w-2 h-2 bg-gray-600 dark:bg-gray-400 rounded-full animate-bounce delay-200"></div>
-                  </div>
+            {!currentSession ? (
+              <div className="flex flex-col items-center justify-center h-full text-center">
+                <div className="max-w-md">
+                  <h3 className="text-2xl font-semibold text-gray-900 dark:text-gray-100 mb-3">
+                    Welcome to Behavioral Interview Practice
+                  </h3>
+                  <p className="text-gray-600 dark:text-gray-400 mb-6">
+                    Start a new session to practice behavioral interview questions with AI-powered feedback. 
+                    Create your first session by clicking the &quot;New&quot; button in the sidebar.
+                  </p>
+                  <Button
+                    variant="primary"
+                    className="bg-[rgba(76,166,38,1)] hover:bg-[rgba(76,166,38,0.9)] flex items-center gap-2 mx-auto"
+                    onClick={() => setShowNewSessionModal(true)}
+                  >
+                    <Plus className="w-5 h-5" />
+                    Create New Session
+                  </Button>
                 </div>
               </div>
+            ) : (
+              <>
+                {messages.map((message) => (
+                  <ChatMessage
+                    key={message.id}
+                    role={message.role}
+                    content={message.content}
+                    timestamp={message.timestamp}
+                  />
+                ))}
+                {isLoading && (
+                  <div className="flex justify-start">
+                    <div className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-2xl px-4 py-3">
+                      <div className="flex space-x-1">
+                        <div className="w-2 h-2 bg-gray-600 dark:bg-gray-400 rounded-full animate-bounce"></div>
+                        <div className="w-2 h-2 bg-gray-600 dark:bg-gray-400 rounded-full animate-bounce delay-100"></div>
+                        <div className="w-2 h-2 bg-gray-600 dark:bg-gray-400 rounded-full animate-bounce delay-200"></div>
+                      </div>
+                    </div>
+                  </div>
+                )}
+                <div ref={messagesEndRef} />
+              </>
             )}
-            <div ref={messagesEndRef} />
           </div>
 
           {/* Input Area */}
@@ -379,6 +411,16 @@ export default function BehavioralInterviewPage() {
           // TODO: Navigate to live practice session
           setShowLiveModal(false);
           alert('Starting live practice session...');
+        }}
+      />
+
+      {/* New Session Modal */}
+      <NewSessionModal
+        isOpen={showNewSessionModal}
+        onClose={() => setShowNewSessionModal(false)}
+        onStart={(params) => {
+          setShowNewSessionModal(false);
+          createNewSession(params);
         }}
       />
     </div>
