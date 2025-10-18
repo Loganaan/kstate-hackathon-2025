@@ -393,39 +393,39 @@ export default function TestAPIPage() {
                     <div className="grid grid-cols-2 gap-4 p-4 bg-gray-50 rounded-md">
                       <div>
                         <p className="text-sm text-gray-600">Company</p>
-                        <p className="font-semibold">{selectedQuestion.company}</p>
+                        <p className="font-semibold text-gray-900">{selectedQuestion.company}</p>
                       </div>
                       <div>
                         <p className="text-sm text-gray-600">Role</p>
-                        <p className="font-semibold">{selectedQuestion.role}</p>
+                        <p className="font-semibold text-gray-900">{selectedQuestion.role}</p>
                       </div>
                       <div>
                         <p className="text-sm text-gray-600">Seniority</p>
-                        <p className="font-semibold">{selectedQuestion.seniority}</p>
+                        <p className="font-semibold text-gray-900 capitalize">{selectedQuestion.seniority}</p>
                       </div>
                       <div>
                         <p className="text-sm text-gray-600">Difficulty</p>
                         <p className="font-semibold">
                           <span
-                            className={`px-2 py-1 rounded text-xs ${
-                              selectedQuestion.difficulty === 'Easy'
-                                ? 'bg-green-100 text-green-800'
-                                : selectedQuestion.difficulty === 'Medium'
-                                ? 'bg-yellow-100 text-yellow-800'
-                                : 'bg-red-100 text-red-800'
+                            className={`px-2 py-1 rounded text-xs font-bold ${
+                              selectedQuestion.difficulty === 'easy'
+                                ? 'bg-green-200 text-green-900'
+                                : selectedQuestion.difficulty === 'medium'
+                                ? 'bg-yellow-200 text-yellow-900'
+                                : 'bg-red-200 text-red-900'
                             }`}
                           >
-                            {selectedQuestion.difficulty}
+                            {selectedQuestion.difficulty.toUpperCase()}
                           </span>
                         </p>
                       </div>
                       <div>
                         <p className="text-sm text-gray-600">Format</p>
-                        <p className="font-semibold">{selectedQuestion.format}</p>
+                        <p className="font-semibold text-gray-900">{selectedQuestion.format}</p>
                       </div>
                       <div>
                         <p className="text-sm text-gray-600">ID</p>
-                        <p className="font-mono text-xs">{selectedQuestion.id}</p>
+                        <p className="font-mono text-xs text-gray-900">{selectedQuestion.id}</p>
                       </div>
                     </div>
 
@@ -438,7 +438,7 @@ export default function TestAPIPage() {
                         {selectedQuestion.topicTags.map((tag, idx) => (
                           <span
                             key={idx}
-                            className="px-3 py-1 bg-blue-100 text-blue-800 rounded-full text-sm"
+                            className="px-3 py-1 bg-blue-200 text-blue-900 rounded-full text-sm font-semibold"
                           >
                             {tag}
                           </span>
@@ -451,7 +451,7 @@ export default function TestAPIPage() {
                       <h3 className="text-lg font-semibold text-gray-800 mb-2">
                         Problem Statement
                       </h3>
-                      <div className="p-4 bg-gray-50 rounded-md whitespace-pre-wrap">
+                      <div className="p-4 bg-gray-50 rounded-md whitespace-pre-wrap text-gray-900">
                         {selectedQuestion.prompt}
                       </div>
                     </div>
@@ -480,16 +480,16 @@ export default function TestAPIPage() {
                               <p className="font-semibold text-sm text-gray-700 mb-2">
                                 Test Case {idx + 1}
                               </p>
-                              <div className="space-y-1 text-sm">
+                              <div className="space-y-1 text-sm text-gray-900">
                                 <p>
                                   <span className="font-medium">Input:</span>{' '}
-                                  <code className="bg-white px-2 py-1 rounded">
+                                  <code className="bg-white px-2 py-1 rounded text-gray-900">
                                     {tc.input}
                                   </code>
                                 </p>
                                 <p>
                                   <span className="font-medium">Expected Output:</span>{' '}
-                                  <code className="bg-white px-2 py-1 rounded">
+                                  <code className="bg-white px-2 py-1 rounded text-gray-900">
                                     {tc.expectedOutput}
                                   </code>
                                 </p>
@@ -518,17 +518,17 @@ export default function TestAPIPage() {
                               key={idx}
                               className={`p-3 rounded-md border-2 ${
                                 choice.isCorrect
-                                  ? 'border-green-500 bg-green-50'
-                                  : 'border-gray-200 bg-white'
+                                  ? 'border-green-600 bg-green-100'
+                                  : 'border-gray-300 bg-white'
                               }`}
                             >
                               <div className="flex items-start gap-2">
-                                <span className="font-semibold">
+                                <span className="font-semibold text-gray-900">
                                   {String.fromCharCode(65 + idx)}.
                                 </span>
-                                <span className="flex-1">{choice.text}</span>
+                                <span className="flex-1 text-gray-900">{choice.text}</span>
                                 {choice.isCorrect && (
-                                  <span className="text-green-600 font-semibold text-sm">
+                                  <span className="text-green-700 font-bold text-sm">
                                     ✓ Correct
                                   </span>
                                 )}
@@ -545,7 +545,7 @@ export default function TestAPIPage() {
                         <h3 className="text-lg font-semibold text-gray-800 mb-2">
                           Solution Outline
                         </h3>
-                        <div className="p-4 bg-gray-50 rounded-md whitespace-pre-wrap">
+                        <div className="p-4 bg-gray-50 rounded-md whitespace-pre-wrap text-gray-900">
                           {selectedQuestion.solutionOutline}
                         </div>
                       </div>
@@ -557,7 +557,7 @@ export default function TestAPIPage() {
                         <h3 className="text-lg font-semibold text-gray-800 mb-2">
                           Explanation
                         </h3>
-                        <div className="p-4 bg-gray-50 rounded-md whitespace-pre-wrap">
+                        <div className="p-4 bg-gray-50 rounded-md whitespace-pre-wrap text-gray-900">
                           {selectedQuestion.explanation}
                         </div>
                       </div>
