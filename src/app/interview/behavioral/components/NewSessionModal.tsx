@@ -24,11 +24,7 @@ export default function NewSessionModal({ isOpen, onClose, onStart }: NewSession
   const [jobDescription, setJobDescription] = useState('');
 
   const handleStart = () => {
-    // Only require at least one field to be filled
-    if (!company && !role && !seniority && !jobDescription) {
-      return;
-    }
-
+    // All fields are optional, so we can start even with empty values
     onStart({
       company,
       role,
