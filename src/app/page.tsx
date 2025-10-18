@@ -51,6 +51,8 @@ export default function Home() {
       document.body.style.overflow = 'hidden';
     } else {
       document.body.style.overflow = 'unset';
+      // Scroll to top when splash finishes
+      window.scrollTo(0, 0);
     }
     return () => {
       document.body.style.overflow = 'unset';
@@ -61,8 +63,8 @@ export default function Home() {
     <div className="min-h-screen bg-white dark:bg-gray-900 flex items-center justify-center transition-colors relative overflow-hidden">
       {/* Splash Screen Overlay with typing animation */}
       <div
-        className={`absolute inset-0 z-50 flex items-center justify-center transition-transform duration-700 ${showSplash ? 'translate-y-0' : '-translate-y-full'}`}
-        style={{ backgroundColor: 'white' }}
+        className={`fixed inset-0 flex items-center justify-center transition-transform duration-700 ${showSplash ? 'translate-y-0' : '-translate-y-full'}`}
+        style={{ backgroundColor: 'white', zIndex: 9999 }}
       >
         <style>{`
           .dark .splash-overlay-bg {
