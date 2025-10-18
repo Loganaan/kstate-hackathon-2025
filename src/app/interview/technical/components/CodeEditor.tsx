@@ -5,10 +5,8 @@ import Editor from '@monaco-editor/react';
 import { useTheme } from 'next-themes';
 
 interface CodeEditorProps {
-  language: 'javascript' | 'python' | 'java';
   code: string;
   onCodeChange: (value: string) => void;
-  onLanguageChange: (language: 'javascript' | 'python' | 'java') => void;
   onRunCode: () => void;
   onRequestFeedback: () => void;
   onReset: () => void;
@@ -17,10 +15,8 @@ interface CodeEditorProps {
 }
 
 export default function CodeEditor({
-  language,
   code,
   onCodeChange,
-  onLanguageChange,
   onRunCode,
   onRequestFeedback,
   onReset,
@@ -28,19 +24,6 @@ export default function CodeEditor({
   isFetchingFeedback,
 }: CodeEditorProps) {
   const { resolvedTheme } = useTheme();
-
-  const getFileExtension = () => {
-    switch (language) {
-      case 'javascript':
-        return 'js';
-      case 'python':
-        return 'py';
-      case 'java':
-        return 'java';
-      default:
-        return 'js';
-    }
-  };
 
   return (
     <div className="flex-1 flex flex-col min-h-0 border-b border-gray-300 dark:border-gray-700">
@@ -50,20 +33,12 @@ export default function CodeEditor({
           <div className="flex items-center gap-2">
             <Code2 className="w-4 h-4 text-gray-400" />
             <span className="text-gray-300 text-sm font-mono">
-              solution.{getFileExtension()}
+              solution.py
             </span>
           </div>
-          <select
-            value={language}
-            onChange={(e) =>
-              onLanguageChange(e.target.value as 'javascript' | 'python' | 'java')
-            }
-            className="bg-gray-700 dark:bg-gray-900 text-gray-300 text-sm rounded px-3 py-1 border-none focus:ring-2 focus:ring-[rgba(76,166,38,1)] cursor-pointer"
-          >
-            <option value="javascript">JavaScript</option>
-            <option value="python">Python</option>
-            <option value="java">Java</option>
-          </select>
+          <div className="bg-gray-700 dark:bg-gray-900 text-gray-300 text-sm rounded px-3 py-1">
+            Python
+          </div>
         </div>
 
         {/* Action Buttons */}
@@ -98,7 +73,7 @@ export default function CodeEditor({
       <div className="flex-1 min-h-0">
         <Editor
           height="100%"
-          language={language}
+          language="python"
           value={code}
           onChange={(value) => onCodeChange(value || '')}
           theme={resolvedTheme === 'dark' ? 'vs-dark' : 'light'}

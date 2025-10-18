@@ -2,7 +2,7 @@
 // TypeScript type definitions for API requests, responses, and error handling.
 // Defines interfaces for all API interactions and data transfer objects.
 
-export interface APIResponse<T = any> {
+export interface APIResponse<T = unknown> {
   success: boolean;
   data?: T;
   error?: string;
