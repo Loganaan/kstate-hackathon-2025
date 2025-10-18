@@ -20,7 +20,7 @@ export default function ThemeToggle() {
   if (!mounted) {
     // Return a placeholder with the same size to avoid layout shift
     return (
-      <button className="p-2 rounded-lg bg-gray-100 dark:bg-gray-800 w-10 h-10" aria-label="Loading theme">
+      <button className="w-12 h-12 bg-[rgba(76,166,38,1)] text-white rounded-md flex items-center justify-center shadow transform transition-all duration-200" aria-label="Loading theme">
         <div className="w-5 h-5" />
       </button>
     );
@@ -38,16 +38,16 @@ export default function ThemeToggle() {
   const getIcon = () => {
     // Show icon based on current theme (system resolves to light or dark)
     if (theme === 'dark') {
-      return <Moon className="w-5 h-5 text-blue-400" />;
+      return <Moon className="w-5 h-5 text-white" />;
     } else {
-      return <Sun className="w-5 h-5 text-yellow-600" />;
+      return <Sun className="w-5 h-5 text-white" />;
     }
   };
 
   return (
     <button
       onClick={cycleTheme}
-      className="p-2 rounded-lg bg-gray-100 hover:bg-gray-200 dark:bg-gray-800 dark:hover:bg-gray-700 transition-colors"
+      className="w-12 h-12 bg-[rgba(76,166,38,1)] hover:bg-[rgba(76,166,38,0.9)] text-white rounded-md flex items-center justify-center shadow transform transition-all duration-200 hover:scale-110"
       aria-label={`Current theme: ${theme}. Click to toggle between light and dark mode.`}
       title={`${theme === 'dark' ? 'Dark' : 'Light'} mode - Click to toggle`}
     >

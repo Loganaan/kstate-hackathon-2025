@@ -13,10 +13,10 @@ export default function TechnicalInterviewPage() {
   const placeholderQuestion = "Write a function that takes an array of integers and a target value, then returns the indices of two numbers that add up to the target.";
 
   return (
-    <div className="bg-gray-50 dark:bg-gray-950 min-h-[calc(100vh-8rem)]">
+    <div className="bg-gray-50 dark:bg-gray-950 min-h-[calc(100vh-8rem)] pl-20">
       {/* Header */}
       <div className="bg-white dark:bg-gray-900 border-b border-gray-200 dark:border-gray-800">
-        <div className="max-w-full px-4 sm:px-6 lg:px-8 py-4">
+        <div className="max-w-full px-6 sm:px-8 lg:px-12 py-4">
           <div className="flex justify-between items-center">
             <div>
               <h1 className="text-2xl font-semibold text-gray-900 dark:text-gray-100">Technical Interview Session</h1>

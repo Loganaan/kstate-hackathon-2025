@@ -1,186 +1,203 @@
 'use client';
 
 import { useState } from 'react';
-import { Mic, MicOff, SkipForward, Play, Pause } from 'lucide-react';
+import { Plus, Video } from 'lucide-react';
 import Button from '@/components/Button';
+import ChatMessage from './components/ChatMessage';
+import SessionCard from './components/SessionCard';
+import LivePracticeModal from './components/LivePracticeModal';
+import ChatInput from './components/ChatInput';
+
+interface Message {
+  id: string;
+  role: 'user' | 'assistant';
+  content: string;
+  timestamp: Date;
+}
+
+interface ChatSession {
+  id: string;
+  title: string;
+  lastMessage: string;
+  timestamp: Date;
+  messageCount: number;
+}
 
 export default function BehavioralInterviewPage() {
-  const [isRecording, setIsRecording] = useState(false);
-  const [isPaused, setIsPaused] = useState(false);
+  const [sessions, setSessions] = useState<ChatSession[]>([
+    {
+      id: '1',
+      title: 'Leadership Questions',
+      lastMessage: 'Tell me about a time you led a team...',
+      timestamp: new Date(),
+      messageCount: 12
+    },
+    {
+      id: '2',
+      title: 'Conflict Resolution',
+      lastMessage: 'How do you handle disagreements?',
+      timestamp: new Date(Date.now() - 86400000),
+      messageCount: 8
+    }
+  ]);
+  
+  const [activeSessionId, setActiveSessionId] = useState<string>('1');
+  const [messages, setMessages] = useState<Message[]>([
+    {
+      id: '1',
+      role: 'assistant',
+      content: 'Hi! I\'m your AI interview coach. I\'m here to help you practice behavioral interview questions. What type of questions would you like to work on today?',
+      timestamp: new Date()
+    }
+  ]);
+  
+  const [inputMessage, setInputMessage] = useState('');
+  const [showLiveModal, setShowLiveModal] = useState(false);
 
-  // Placeholder question
-  const currentQuestion = "Tell me about a time when you had to deal with a difficult team member. How did you handle the situation?";
+  const handleSendMessage = () => {
+    if (!inputMessage.trim()) return;
+
+    const newUserMessage: Message = {
+      id: Date.now().toString(),
+      role: 'user',
+      content: inputMessage,
+      timestamp: new Date()
+    };
+
+    setMessages([...messages, newUserMessage]);
+    setInputMessage('');
+
+    // Simulate AI response
+    setTimeout(() => {
+      const aiResponse: Message = {
+        id: (Date.now() + 1).toString(),
+        role: 'assistant',
+        content: 'That\'s a great question! Let me help you prepare for that. Here\'s what I recommend...',
+        timestamp: new Date()
+      };
+      setMessages(prev => [...prev, aiResponse]);
+    }, 1000);
+  };
+
+  const createNewSession = () => {
+    const newSession: ChatSession = {
+      id: Date.now().toString(),
+      title: 'New Session',
+      lastMessage: 'Start a conversation...',
+      timestamp: new Date(),
+      messageCount: 0
+    };
+    setSessions([newSession, ...sessions]);
+    setActiveSessionId(newSession.id);
+    setMessages([
+      {
+        id: '1',
+        role: 'assistant',
+        content: 'Hi! I\'m your AI interview coach. I\'m here to help you practice behavioral interview questions. What type of questions would you like to work on today?',
+        timestamp: new Date()
+      }
+    ]);
+  };
+
+  const deleteSession = (sessionId: string) => {
+    setSessions(sessions.filter(s => s.id !== sessionId));
+    if (activeSessionId === sessionId && sessions.length > 1) {
+      setActiveSessionId(sessions[0].id);
+    }
+  };
 
   return (
-    <div className="bg-gray-50 dark:bg-gray-950 min-h-[calc(100vh-8rem)]">
-      {/* Header */}
-      <div className="bg-white dark:bg-gray-900 border-b border-gray-200 dark:border-gray-800">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
-          <h1 className="text-2xl font-semibold text-gray-900 dark:text-gray-100">Behavioral Interview Session</h1>
-          <p className="text-gray-600 dark:text-gray-400 mt-1">Question 1 of 5</p>
-        </div>
-      </div>
-
-      {/* Main Content */}
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        <div className="grid lg:grid-cols-3 gap-6">
-          
-          {/* Left Panel - Current Question */}
-          <div className="lg:col-span-1">
-            <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-md p-6 sticky top-24">
-              <h2 className="text-lg font-semibold text-gray-800 dark:text-gray-100 mb-4">Current Question</h2>
-              <div className="bg-blue-50 dark:bg-blue-900/30 rounded-lg p-4 border border-blue-100 dark:border-blue-800">
-                <p className="text-gray-800 dark:text-gray-200 leading-relaxed">
-                  {currentQuestion}
-                </p>
-              </div>
-              
-              {/* Tips */}
-              <div className="mt-6">
-                <h3 className="text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2">Tips:</h3>
-                <ul className="text-sm text-gray-600 dark:text-gray-400 space-y-1">
-                  <li>• Use the STAR method</li>
-                  <li>• Be specific and concise</li>
-                  <li>• Focus on your actions</li>
-                  <li>• Highlight the results</li>
-                </ul>
-              </div>
-            </div>
-          </div>
-
-          {/* Center Panel - Recording Area */}
-          <div className="lg:col-span-1">
-            <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-md p-8 flex flex-col items-center justify-center min-h-[500px]">
-              
-              {/* Microphone Visual */}
-              <div className={`
-                w-32 h-32 rounded-full flex items-center justify-center mb-8
-                transition-all duration-300
-                ${isRecording 
-                  ? 'bg-red-100 dark:bg-red-900/30 animate-pulse shadow-lg shadow-red-200 dark:shadow-red-900/50' 
-                  : 'bg-gray-100 dark:bg-gray-700'
-                }
-              `}>
-                {isRecording ? (
-                  <Mic className="w-16 h-16 text-red-600 dark:text-red-400" />
-                ) : (
-                  <MicOff className="w-16 h-16 text-gray-400 dark:text-gray-500" />
-                )}
-              </div>
-
-              {/* Status Text */}
-              <div className="text-center mb-8">
-                <h3 className="text-xl font-semibold text-gray-800 dark:text-gray-100 mb-2">
-                  {isRecording ? 'Recording...' : 'Ready to Record'}
-                </h3>
-                <p className="text-gray-600 dark:text-gray-400">
-                  {isRecording 
-                    ? 'Speak clearly and take your time' 
-                    : 'Click the button below to start'
-                  }
-                </p>
-                
-                {/* Timer */}
-                {isRecording && (
-                  <div className="mt-4">
-                    <span className="text-3xl font-mono text-red-600 dark:text-red-400">00:42</span>
-                  </div>
-                )}
-              </div>
-
-              {/* Control Buttons */}
-              <div className="flex gap-4">
-                <Button
-                  variant={isRecording ? 'danger' : 'primary'}
-                  onClick={() => setIsRecording(!isRecording)}
-                  className="flex items-center gap-2"
-                >
-                  {isRecording ? (
-                    <>
-                      <MicOff className="w-5 h-5" />
-                      Stop Recording
-                    </>
-                  ) : (
-                    <>
-                      <Mic className="w-5 h-5" />
-                      Start Recording
-                    </>
-                  )}
-                </Button>
-                
-                {isRecording && (
-                  <Button
-                    variant="secondary"
-                    onClick={() => setIsPaused(!isPaused)}
-                    className="flex items-center gap-2"
-                  >
-                    {isPaused ? (
-                      <Play className="w-5 h-5" />
-                    ) : (
-                      <Pause className="w-5 h-5" />
-                    )}
-                  </Button>
-                )}
-              </div>
-            </div>
-          </div>
-
-          {/* Right Panel - Transcript */}
-          <div className="lg:col-span-1">
-            <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-md p-6">
-              <h2 className="text-lg font-semibold text-gray-800 dark:text-gray-100 mb-4">Transcript</h2>
-              <div className="bg-gray-50 dark:bg-gray-900 rounded-lg p-4 min-h-[400px] max-h-[500px] overflow-y-auto">
-                {isRecording ? (
-                  <div className="space-y-2">
-                    <p className="text-gray-700 dark:text-gray-300 leading-relaxed">
-                      {/* TODO: Real-time transcription will appear here */}
-                      <span className="text-gray-400 dark:text-gray-500">Transcription will appear here as you speak...</span>
-                    </p>
-                  </div>
-                ) : (
-                  <p className="text-gray-400 dark:text-gray-500 text-center mt-8">
-                    Start recording to see your transcript
-                  </p>
-                )}
-              </div>
-              
-              {/* Notes Section */}
-              <div className="mt-4">
-                <label className="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2">
-                  Personal Notes
-                </label>
-                <textarea
-                  className="w-full bg-white dark:bg-gray-900 border border-gray-300 dark:border-gray-700 text-gray-900 dark:text-gray-100 rounded-lg p-3 text-sm focus:ring-2 focus:ring-blue-500 focus:border-transparent resize-none"
-                  rows={4}
-                  placeholder="Add any notes or thoughts here..."
-                />
-              </div>
-            </div>
-          </div>
-        </div>
-
-        {/* Bottom Control Bar */}
-        <div className="mt-8 bg-white dark:bg-gray-800 rounded-2xl shadow-md p-6">
-          <div className="flex justify-between items-center">
-            <div className="text-sm text-gray-600 dark:text-gray-400">
-              Session Duration: <span className="font-semibold">5:32</span>
+    <div className="bg-gray-50 dark:bg-gray-950 min-h-[calc(100vh-8rem)] pl-20">
+      <div className="flex h-[calc(100vh-8rem)]">
+        
+        {/* Left Sidebar - Sessions List */}
+        <div className="w-80 bg-white dark:bg-gray-900 border-r border-gray-200 dark:border-gray-800 flex flex-col">
+          {/* Header */}
+          <div className="p-4 border-b border-gray-200 dark:border-gray-800">
+            <div className="flex items-center justify-between mb-4">
+              <h2 className="text-xl font-semibold text-gray-900 dark:text-gray-100">Chat Sessions</h2>
+              <Button
+                variant="primary"
+                className="flex items-center gap-2 text-sm bg-[rgba(76,166,38,1)] hover:bg-[rgba(76,166,38,0.9)]"
+                onClick={createNewSession}
+              >
+                <Plus className="w-4 h-4" />
+                New
+              </Button>
             </div>
             
-            <div className="flex gap-4">
-              <Button variant="secondary">
-                Save Progress
-              </Button>
-              <Button 
-                disabled={isRecording}
-                className="flex items-center gap-2"
-              >
-                Next Question
-                <SkipForward className="w-4 h-4" />
-              </Button>
-            </div>
+            {/* Live Practice Button */}
+            <Button
+              variant="secondary"
+              className="w-full flex items-center justify-center gap-2 border-[rgba(76,166,38,1)] text-[rgba(76,166,38,1)] hover:bg-[rgba(76,166,38,0.1)]"
+              onClick={() => setShowLiveModal(true)}
+            >
+              <Video className="w-5 h-5" />
+              Start Live Practice
+            </Button>
+          </div>
+
+          {/* Sessions List */}
+          <div className="flex-1 overflow-y-auto">
+            {sessions.map((session) => (
+              <SessionCard
+                key={session.id}
+                id={session.id}
+                title={session.title}
+                lastMessage={session.lastMessage}
+                timestamp={session.timestamp}
+                messageCount={session.messageCount}
+                isActive={activeSessionId === session.id}
+                onSelect={setActiveSessionId}
+                onDelete={deleteSession}
+              />
+            ))}
           </div>
         </div>
+
+        {/* Main Chat Area */}
+        <div className="flex-1 flex flex-col bg-white dark:bg-gray-900">
+          {/* Chat Header */}
+          <div className="p-4 border-b border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-900">
+            <h1 className="text-xl font-semibold text-gray-900 dark:text-gray-100">
+              Behavioral Interview Coach
+            </h1>
+            <p className="text-sm text-gray-600 dark:text-gray-400 mt-1">
+              Practice with AI-powered interview questions and feedback
+            </p>
+          </div>
+
+          {/* Messages Area */}
+          <div className="flex-1 overflow-y-auto p-6 space-y-4 bg-gray-50 dark:bg-gray-950">
+            {messages.map((message) => (
+              <ChatMessage
+                key={message.id}
+                role={message.role}
+                content={message.content}
+                timestamp={message.timestamp}
+              />
+            ))}
+          </div>
+
+          {/* Input Area */}
+          <ChatInput
+            value={inputMessage}
+            onChange={setInputMessage}
+            onSend={handleSendMessage}
+          />
+        </div>
       </div>
+
+      {/* Live Practice Modal */}
+      <LivePracticeModal
+        isOpen={showLiveModal}
+        onClose={() => setShowLiveModal(false)}
+        onStart={() => {
+          // TODO: Navigate to live practice session
+          setShowLiveModal(false);
+          alert('Starting live practice session...');
+        }}
+      />
     </div>
   );
 }

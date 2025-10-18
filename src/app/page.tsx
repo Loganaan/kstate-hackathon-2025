@@ -4,7 +4,7 @@ import Link from "next/link";
 
 export default function Home() {
   return (
-    <div className="min-h-screen bg-white dark:bg-gray-900 flex items-center justify-center transition-colors">
+    <div className="min-h-screen bg-white dark:bg-gray-900 flex items-center justify-center transition-colors pl-20">
       {/* Left Section - Behavioral Interview */}
       <Link href="/interview/behavioral" className="flex flex-col items-center group relative">
         <div className="flex items-center mb-8 relative">
