@@ -1,6 +1,9 @@
 import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
+import SideButtons from "../components/SideButtons";
+
 import "./globals.css";
+
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -25,9 +28,15 @@ export default function RootLayout({
   return (
     <html lang="en">
       <body
-        className={`${geistSans.variable} ${geistMono.variable} antialiased`}
+        className={`${geistSans.variable} ${geistMono.variable} antialiased bg-background`}
       >
-        {children}
+        <SideButtons />
+        <div className="w-full flex justify-center mt-0 sticky top-0 z-50 py-2 bg-white" style={{ background: '#fff' }}>
+          <img src="/images/TechReady.png" alt="TechReady Logo" className="h-16 object-contain" />
+        </div>
+        <main>
+          {children}
+        </main>
       </body>
     </html>
   );
