@@ -5,11 +5,11 @@ import ThemeToggle from "@/components/ThemeToggle";
 
 export default function SideButtons() {
   return (
-    <div className="fixed top-1/4 left-2 flex flex-col space-y-4 z-50">
+    <div className="fixed top-1/4 left-4 flex flex-col space-y-4 z-50">
       {/* Behavioral Interview Button */}
       <Link
         href="/interview/behavioral"
-        className="w-12 h-12 bg-black dark:bg-white text-white dark:text-black rounded-md flex items-center justify-center shadow hover:bg-gray-800 dark:hover:bg-gray-200 transform transition-all duration-200 hover:scale-110"
+        className="w-12 h-12 bg-[rgba(76,166,38,1)] hover:bg-[rgba(76,166,38,0.9)] text-white rounded-md flex items-center justify-center shadow transform transition-all duration-200 hover:scale-110"
         title="Behavioral Interview Practice"
       >
         <svg
@@ -31,7 +31,7 @@ export default function SideButtons() {
       {/* Technical Interview Button */}
       <Link
         href="/interview/technical"
-        className="w-12 h-12 bg-black dark:bg-white text-white dark:text-black rounded-md flex items-center justify-center shadow hover:bg-gray-800 dark:hover:bg-gray-200 transform transition-all duration-200 hover:scale-110"
+        className="w-12 h-12 bg-[rgba(76,166,38,1)] hover:bg-[rgba(76,166,38,0.9)] text-white rounded-md flex items-center justify-center shadow transform transition-all duration-200 hover:scale-110"
         title="Technical Interview Practice"
       >
         <svg
@@ -53,7 +53,7 @@ export default function SideButtons() {
       {/* Dashboard Button */}
       <Link
         href="/dashboard"
-        className="w-12 h-12 bg-black dark:bg-white text-white dark:text-black rounded-md flex items-center justify-center shadow hover:bg-gray-800 dark:hover:bg-gray-200 transform transition-all duration-200 hover:scale-110"
+        className="w-12 h-12 bg-[rgba(76,166,38,1)] hover:bg-[rgba(76,166,38,0.9)] text-white rounded-md flex items-center justify-center shadow transform transition-all duration-200 hover:scale-110"
         title="Dashboard"
       >
         <svg
@@ -74,7 +74,7 @@ export default function SideButtons() {
 
       {/* Flashcards Button */}
       <button
-        className="w-12 h-12 bg-black dark:bg-white text-white dark:text-black rounded-md flex items-center justify-center shadow hover:bg-gray-800 dark:hover:bg-gray-200 transform transition-all duration-200 hover:scale-110"
+        className="w-12 h-12 bg-[rgba(76,166,38,1)] hover:bg-[rgba(76,166,38,0.9)] text-white rounded-md flex items-center justify-center shadow transform transition-all duration-200 hover:scale-110"
         title="Flashcards"
       >
         <svg
@@ -92,7 +92,7 @@ export default function SideButtons() {
 
       {/* About Button */}
       <button
-        className="w-12 h-12 bg-black dark:bg-white text-white dark:text-black rounded-md flex items-center justify-center shadow hover:bg-gray-800 dark:hover:bg-gray-200 transform transition-all duration-200 hover:scale-110"
+        className="w-12 h-12 bg-[rgba(76,166,38,1)] hover:bg-[rgba(76,166,38,0.9)] text-white rounded-md flex items-center justify-center shadow transform transition-all duration-200 hover:scale-110"
         title="About"
       >
         <svg
