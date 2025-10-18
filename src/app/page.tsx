@@ -60,7 +60,7 @@ export default function Home() {
   }, [showSplash]);
 
   return (
-    <div className="min-h-screen bg-white dark:bg-gray-900 flex items-center justify-center transition-colors relative overflow-hidden">
+    <div className="min-h-screen bg-white dark:bg-gray-900 transition-colors relative overflow-hidden">
       {/* Splash Screen Overlay with typing animation */}
       <div
         className={`fixed inset-0 flex items-center justify-center transition-transform duration-700 ${showSplash ? 'translate-y-0' : '-translate-y-full'}`}
@@ -102,8 +102,8 @@ export default function Home() {
         </span>
       </div>
       
-      {/* Header Text with Typing Animation */}
-      <div className="absolute top-24 left-1/2 -translate-x-1/2 z-40">
+      {/* Header Text with Typing Animation - Below Logo */}
+      <div className="w-full flex justify-center pt-2 pb-6">
         <p className="text-2xl text-black dark:text-white font-medium whitespace-nowrap">
           {headerTypedText}
           <span
@@ -120,6 +120,8 @@ export default function Home() {
         </p>
       </div>
 
+      {/* Main Content Area */}
+      <div className="flex items-center justify-center">
       {/* Left Section - Behavioral Interview */}
       <Link href="/interview/behavioral" className="flex flex-col items-center group relative mt-8">
         <div className="flex items-center mb-8 relative">
@@ -188,6 +190,7 @@ export default function Home() {
           Technical
         </span>
       </Link>
+      </div>
     </div>
   );
 }
