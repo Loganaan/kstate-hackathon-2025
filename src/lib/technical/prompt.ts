@@ -24,7 +24,15 @@ Output Requirements:
 - For multiple-choice questions: include exactly one choice with correct: true
 - For coding questions: EVERY test case MUST have a filled "output" field with the actual expected result (never empty, never blank)
 - For coding questions: include constraints, edge cases, and sample input/output with CONCRETE output values
-- Topic tags should be relevant and specific (e.g., "arrays", "dynamic-programming", "sql")`;
+- Topic tags should be relevant and specific (e.g., "arrays", "dynamic-programming", "sql")
+
+CRITICAL JSON FORMATTING RULES:
+- Escape all special characters in strings: use \\" for quotes, \\n for newlines, \\\\ for backslashes
+- Keep all text on single lines within JSON strings - no actual newlines in string values
+- For multi-line content (like code or explanations), use \\n escape sequences
+- Double-check that all strings are properly closed with quotes
+- Remove any trailing commas before closing brackets or braces
+- Test your JSON is valid before returning it`;
 
 /**
  * Build user prompt from request parameters

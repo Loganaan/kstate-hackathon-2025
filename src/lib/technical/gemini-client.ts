@@ -28,7 +28,7 @@ function getModelName(): string {
 }
 
 /**
- * Parse JSON response from Gemini, handling markdown code blocks
+ * Parse JSON response from Gemini, handling markdown code blocks and malformed JSON
  */
 function parseGeminiJSON(text: string): unknown {
   let cleaned = text.trim();
@@ -42,7 +42,46 @@ function parseGeminiJSON(text: string): unknown {
     cleaned = cleaned.trim();
   }
   
-  return JSON.parse(cleaned);
+  try {
+    return JSON.parse(cleaned);
+  } catch (error) {
+    // If JSON parsing fails, try to extract JSON from the text
+    console.error('[Gemini API] Initial JSON parse failed, attempting to extract JSON...');
+    
+    // Try to find JSON object boundaries
+    const firstBrace = cleaned.indexOf('{');
+    const lastBrace = cleaned.lastIndexOf('}');
+    
+    if (firstBrace !== -1 && lastBrace !== -1 && lastBrace > firstBrace) {
+      const extracted = cleaned.substring(firstBrace, lastBrace + 1);
+      try {
+        return JSON.parse(extracted);
+      } catch (extractError) {
+        // If still failing, try to fix common issues
+        console.error('[Gemini API] Extraction failed, attempting fixes...');
+        
+        // Try to fix unterminated strings by finding and completing them
+        let fixed = extracted;
+        
+        // Replace problematic newlines within strings
+        fixed = fixed.replace(/([^\\])"([^"]*)\n([^"]*?)"/g, '$1"$2 $3"');
+        
+        // Remove any trailing commas before closing brackets/braces
+        fixed = fixed.replace(/,(\s*[}\]])/g, '$1');
+        
+        try {
+          return JSON.parse(fixed);
+        } catch (finalError) {
+          console.error('[Gemini API] All parsing attempts failed');
+          console.error('[Gemini API] Original text length:', text.length);
+          console.error('[Gemini API] Text preview:', text.substring(0, 500));
+          throw error; // Throw original error
+        }
+      }
+    }
+    
+    throw error;
+  }
 }
 
 /**
@@ -83,10 +122,11 @@ export async function generateQuestions(
   const model = genAI.getGenerativeModel({ 
     model: modelName,
     generationConfig: {
-      temperature: 0.7,
+      temperature: 0.4, // Lower temperature for more consistent JSON formatting
       topK: 40,
-      topP: 0.95,
+      topP: 0.9,
       maxOutputTokens: 8192,
+      responseMimeType: "application/json", // Request JSON format explicitly
     }
   });
   
