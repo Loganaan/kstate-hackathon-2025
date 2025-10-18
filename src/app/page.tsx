@@ -6,7 +6,7 @@ export default function Home() {
   return (
     <div className="min-h-screen bg-white dark:bg-gray-900 flex items-center justify-center transition-colors">
       {/* Left Section - Behavioral Interview */}
-      <Link href="/behavioral" className="flex flex-col items-center group relative">
+      <Link href="/interview/behavioral" className="flex flex-col items-center group relative">
         <div className="flex items-center mb-8 relative">
           <div className="w-30 h-30 rounded-full bg-black dark:bg-white transition-all duration-300 group-hover:-translate-y-2 group-hover:shadow-2xl" />
           <div className="absolute left-full ml-3 top-1/2 -translate-y-1/2 flex flex-col items-center gap-2 opacity-0 group-hover:opacity-100 transition-opacity duration-300">

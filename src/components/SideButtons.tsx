@@ -8,7 +8,7 @@ export default function SideButtons() {
     <div className="fixed top-1/4 left-2 flex flex-col space-y-4 z-50">
       {/* Behavioral Interview Button */}
       <Link
-        href="interview/behavioral"
+        href="/interview/behavioral"
         className="w-12 h-12 bg-black dark:bg-white text-white dark:text-black rounded-md flex items-center justify-center shadow hover:bg-gray-800 dark:hover:bg-gray-200 transform transition-all duration-200 hover:scale-110"
         title="Behavioral Interview Practice"
       >
@@ -71,6 +71,45 @@ export default function SideButtons() {
           />
         </svg>
       </Link>
+
+      {/* Flashcards Button */}
+      <button
+        className="w-12 h-12 bg-black dark:bg-white text-white dark:text-black rounded-md flex items-center justify-center shadow hover:bg-gray-800 dark:hover:bg-gray-200 transform transition-all duration-200 hover:scale-110"
+        title="Flashcards"
+      >
+        <svg
+          xmlns="http://www.w3.org/2000/svg"
+          fill="none"
+          viewBox="0 0 24 24"
+          strokeWidth={1.5}
+          stroke="currentColor"
+          className="w-5 h-5"
+        >
+          <rect x="7" y="7" width="10" height="10" rx="2" />
+          <rect x="4" y="4" width="10" height="10" rx="2" className="opacity-60" />
+        </svg>
+      </button>
+
+      {/* About Button */}
+      <button
+        className="w-12 h-12 bg-black dark:bg-white text-white dark:text-black rounded-md flex items-center justify-center shadow hover:bg-gray-800 dark:hover:bg-gray-200 transform transition-all duration-200 hover:scale-110"
+        title="About"
+      >
+        <svg
+          xmlns="http://www.w3.org/2000/svg"
+          fill="none"
+          viewBox="0 0 24 24"
+          strokeWidth={1.5}
+          stroke="currentColor"
+          className="w-5 h-5"
+        >
+          <path
+            strokeLinecap="round"
+            strokeLinejoin="round"
+            d="M12 17v-6m0-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
+          />
+        </svg>
+      </button>
 
       {/* Theme Toggle Button */}
       <ThemeToggle />
