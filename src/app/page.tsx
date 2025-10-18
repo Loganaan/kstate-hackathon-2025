@@ -9,8 +9,13 @@ export default function Home() {
   const { showSplash, setShowSplash } = useSplash();
   const [typedText, setTypedText] = useState("");
   const [headerTypedText, setHeaderTypedText] = useState("");
+  const [spinCount, setSpinCount] = useState(0);
   const splashText = "Welcome to TechReady";
   const headerText = "Ready to start interview prep?";
+
+  const handleFlowerClick = () => {
+    setSpinCount(prev => prev + 1);
+  };
 
   useEffect(() => {
     let charIndex = 0;
@@ -143,8 +148,21 @@ export default function Home() {
         {/* Flower above the square and horizontal line */}
         <div className="relative w-60 flex flex-col items-center">
           {/* Flower SVG */}
-          <div className="absolute -top-28 left-1/2 -translate-x-1/2 z-20 flex items-center justify-center">
-            <svg width="40" height="40" viewBox="0 0 40 40" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <div 
+            className="absolute -top-28 left-1/2 -translate-x-1/2 z-20 flex items-center justify-center cursor-pointer"
+            onClick={handleFlowerClick}
+          >
+            <svg 
+              width="40" 
+              height="40" 
+              viewBox="0 0 40 40" 
+              fill="none" 
+              xmlns="http://www.w3.org/2000/svg"
+              style={{
+                transform: `rotate(${spinCount * 360}deg)`,
+                transition: 'transform 1s ease-in-out'
+              }}
+            >
               <circle cx="20" cy="20" r="6" fill="#FFD700" />
               <ellipse cx="20" cy="8" rx="4" ry="7" fill="#4CA626" />
               <ellipse cx="20" cy="32" rx="4" ry="7" fill="#4CA626" />
