@@ -22,7 +22,8 @@ Output Requirements:
 - The JSON must match this exact structure: {"questions": [/* array of question objects */]}
 - Each question object must include all required fields based on its format
 - For multiple-choice questions: include exactly one choice with correct: true
-- For coding questions: include constraints, edge cases, and sample input/output
+- For coding questions: EVERY test case MUST have a filled "output" field with the actual expected result (never empty, never blank)
+- For coding questions: include constraints, edge cases, and sample input/output with CONCRETE output values
 - Topic tags should be relevant and specific (e.g., "arrays", "dynamic-programming", "sql")`;
 
 /**
@@ -78,15 +79,25 @@ Return exactly this JSON structure with NO additional text, markdown, or formatt
       "prompt": "Question text here",
       "starterCode": "// Optional: starter code for coding questions",
       "solutionOutline": "Brief solution approach",
-      "testCases": [{"input": "example", "output": "result", "explanation": "why"}],
+      "testCases": [
+        {"input": "nums = [1,2,3]", "output": "6", "explanation": "Sum of all elements"},
+        {"input": "nums = []", "output": "0", "explanation": "Edge case: empty array"}
+      ],
       "choices": [{"label": "A", "text": "choice text", "correct": true}],
       "explanation": "Brief explanation, constraints, or edge cases"
     }
   ]
 }
 
+CRITICAL: For coding questions, every test case MUST have a filled "output" field with the actual expected result. Never leave it empty.
+
 For multiple-choice questions: Include exactly 4 choices (A, B, C, D) with exactly ONE marked as correct: true. The explanation should clarify why the correct answer is right.
-For coding questions: Include at least 2 test cases with clear input/output pairs and starter code. The explanation should describe constraints and edge cases.
+
+For coding questions: Include MINIMUM 3-5 diverse test cases. CRITICAL: Every test case MUST have a concrete "output" value - NEVER leave it empty or blank. 
+Example: If input is "nums = [1,2,3,4,5], k = 2", output should be "3" (the actual number), NOT empty.
+Example: If input is "nums = [], k = 5", output should be "0" (the actual result), NOT empty.
+Cover basic cases, edge cases (empty, null, boundaries), and corner cases (single element, max/min values). The explanation field should describe overall constraints, complexity, and key considerations.
+
 For free-response questions: Write the explanation in a conversational, practical style. Describe how YOU would solve it step-by-step, using concrete technologies and real examples. Say "I would use Redis for caching because..." not "Caching solutions include...". For system design, walk through the architecture naturally: "First I'd set up...", "Then for scaling I'd add...", "The database would be...". Make it sound like a senior engineer explaining their approach, not a grading rubric.`;
 
   return prompt;
@@ -103,10 +114,24 @@ function getFormatInstructions(format: string): string {
     case 'coding':
       return `Format: Generate coding questions with:
 - Clear problem statement
-- Starter code in an appropriate language
-- At least 2 test cases with input/output examples
-- Constraints and edge cases in the explanation
-- Solution outline describing the approach`;
+- Starter code in an appropriate language (JavaScript, Python, Java, etc.)
+- Comprehensive test cases (MINIMUM 3-5 test cases covering different scenarios)
+- Solution outline describing the approach
+
+For test cases - CRITICAL INSTRUCTIONS:
+- Include at least 3-5 diverse test cases in the testCases array
+- Each test case MUST have ALL THREE fields filled with actual values:
+  * "input": The actual input parameters (e.g., "arr = [1,2,3], target = 5")
+  * "output": The EXACT expected output value (e.g., "true", "15", "[1,2]", "null")
+  * "explanation": Why this test case matters and what it tests
+- NEVER leave "output" field empty - always provide the concrete expected result
+- Cover these scenarios:
+  * Basic/happy path case (normal input with typical output)
+  * Edge cases (empty arrays, null values, boundaries)
+  * Corner cases (single element, maximum size, minimum values)
+  * Invalid/error cases if applicable
+- Example format: {"input": "nums = [2,7,11,15], target = 9", "output": "[0,1]", "explanation": "Basic case: finds indices of two numbers that sum to target"}
+- For the explanation field at the question level: describe constraints, time/space complexity, and key edge cases to consider`;
     
     case 'free-response':
       return `Format: Generate open-ended questions that require written explanations (e.g., system design, architecture decisions, trade-offs). 

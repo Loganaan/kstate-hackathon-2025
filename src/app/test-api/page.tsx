@@ -9,7 +9,7 @@ interface Choice {
 
 interface TestCase {
   input: string;
-  expectedOutput: string;
+  output: string;
   explanation?: string;
 }
 
@@ -490,7 +490,7 @@ export default function TestAPIPage() {
                                 <p>
                                   <span className="font-medium">Expected Output:</span>{' '}
                                   <code className="bg-white px-2 py-1 rounded text-gray-900">
-                                    {tc.expectedOutput}
+                                    {tc.output}
                                   </code>
                                 </p>
                                 {tc.explanation && (
