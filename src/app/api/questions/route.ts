@@ -100,9 +100,10 @@ export async function POST(request: NextRequest): Promise<Response> {
     // 7. Return success response
     return Response.json({ questions: savedQuestions }, { status: 200 });
     
-  } catch (error) {
+  } catch (error: unknown) {
     logError('POST /api/questions', error);
-    return internalErrorResponse();
+    const message = error instanceof Error ? error.message : 'Internal server error';
+    return internalErrorResponse(message);
   }
 }
 
@@ -164,8 +165,9 @@ export async function GET(request: NextRequest): Promise<Response> {
     // 7. Return success response
     return Response.json(paginatedResult, { status: 200 });
     
-  } catch (error) {
+  } catch (error: unknown) {
     logError('GET /api/questions', error);
-    return internalErrorResponse();
+    const message = error instanceof Error ? error.message : 'Internal server error';
+    return internalErrorResponse(message);
   }
 }
