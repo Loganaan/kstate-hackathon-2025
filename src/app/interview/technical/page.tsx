@@ -221,7 +221,7 @@ export default function TechnicalInterviewPage() {
     }
   }, [liveProctorMode]);
 
-  // Handle Run Code (TODO: Connect to backend)
+  // Handle Run Code - Execute Python code against test cases
   const handleRunCode = async () => {
     setIsRunning(true);
     setOutput('Running code...');
@@ -230,56 +230,68 @@ export default function TechnicalInterviewPage() {
     const testCasesToRun = currentApiQuestion?.testCases || [];
     
     if (testCasesToRun.length === 0) {
-      // Fallback to mock results
-      setTimeout(() => {
-        const mockResults = [
-          { passed: true, input: '[2,7,11,15], 9', expected: '[0,1]', actual: '[0,1]' },
-          { passed: true, input: '[3,2,4], 6', expected: '[1,2]', actual: '[1,2]' },
-          { passed: false, input: '[3,3], 6', expected: '[0,1]', actual: '[]' },
-        ];
-
-        setTestResults(mockResults);
-        setOutput(
-          `✓ Test 1 passed\n✓ Test 2 passed\n✗ Test 3 failed\n\nExpected: [0,1]\nActual: []`
-        );
-        setIsRunning(false);
-      }, 1500);
+      setOutput('No test cases available for this problem.');
+      setIsRunning(false);
       return;
     }
 
-    // Simulate running code with API test cases
-    setTimeout(() => {
-      const results = testCasesToRun.map((tc) => {
-        // Simulate test results (randomly pass/fail for demo)
-        const passed = Math.random() > 0.25;
-        return {
-          passed,
-          input: tc.input,
-          expected: tc.output,
-          actual: passed ? tc.output : '(incorrect)',
-        };
+    try {
+      // Call the execute API endpoint
+      const response = await fetch('/api/execute', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          code,
+          testCases: testCasesToRun,
+          language: 'python',
+        }),
       });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || 'Failed to execute code');
+      }
+
+      const data = await response.json();
+      const results = data.results;
 
       setTestResults(results);
       
-      const passedCount = results.filter((r) => r.passed).length;
+      const passedCount = results.filter((r: { passed: boolean }) => r.passed).length;
       const totalCount = results.length;
       
       let outputText = '';
-      results.forEach((r, idx) => {
+      results.forEach((r: { passed: boolean; input: string; expected: string; actual: string; error?: string }, idx: number) => {
         outputText += `${r.passed ? '✓' : '✗'} Test ${idx + 1}: ${r.passed ? 'Passed' : 'Failed'}\n`;
-        if (!r.passed) {
-          outputText += `  Input: ${r.input}\n`;
-          outputText += `  Expected: ${r.expected}\n`;
-          outputText += `  Actual: ${r.actual}\n\n`;
+        
+        // Always show the details for better feedback
+        outputText += `  Input: ${r.input}\n`;
+        outputText += `  Expected: ${r.expected}\n`;
+        outputText += `  Actual: ${r.actual}\n`;
+        
+        if (!r.passed && r.error) {
+          outputText += `  Error: ${r.error}\n`;
         }
+        outputText += '\n';
       });
       
       outputText += `\n${passedCount}/${totalCount} tests passed`;
       
+      if (passedCount === totalCount) {
+        outputText += '\n\n🎉 All tests passed! Great job!';
+      }
+      
       setOutput(outputText);
+    } catch (error) {
+      setOutput(
+        `Error executing code:\n${error instanceof Error ? error.message : 'Unknown error'}\n\nPlease check your code for syntax errors.`
+      );
+      setTestResults([]);
+    } finally {
       setIsRunning(false);
-    }, 1500);
+    }
   };
 
   // Handle Request Feedback (TODO: Connect to AI backend)
