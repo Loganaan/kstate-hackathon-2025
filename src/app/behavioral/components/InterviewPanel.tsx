@@ -13,19 +13,63 @@ interface Message {
 }
 
 export default function InterviewPanel() {
-  const initialQuestion = "Hello! I'm your AI interviewer for today's behavioral interview. I'll be asking you questions about your past experiences and how you handle various situations. Are you ready to begin?";
-  const [messages, setMessages] = useState<Message[]>([
-    {
-      id: '1',
-      role: 'assistant',
-      content: initialQuestion,
-      timestamp: new Date(),
-    },
-  ]);
+  const [messages, setMessages] = useState<Message[]>([]);
   const [inputValue, setInputValue] = useState('');
-  const [isLoading, setIsLoading] = useState(false);
+  const [isLoading, setIsLoading] = useState(true);
+  const [interviewComplete, setInterviewComplete] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
+
+  // Generate first question on mount
+  useEffect(() => {
+    const generateFirstQuestion = async () => {
+      try {
+        const response = await fetch('/api/gemini', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            messages: [
+              {
+                role: 'system',
+                content: 'You are starting a behavioral interview. Generate ONE concise behavioral interview question about a past experience (teamwork, leadership, challenges, or problem-solving). Only output the question itself, nothing else. Make it specific and actionable.'
+              }
+            ],
+          }),
+        });
+
+        if (!response.ok) {
+          throw new Error('Failed to generate first question');
+        }
+
+        const data = await response.json();
+        
+        const firstQuestion: Message = {
+          id: '1',
+          role: 'assistant',
+          content: data.response || 'Tell me about a time when you faced a significant challenge. How did you handle it?',
+          timestamp: new Date(),
+        };
+
+        setMessages([firstQuestion]);
+      } catch (error) {
+        console.error('Error generating first question:', error);
+        // Fallback question if API fails
+        const fallbackQuestion: Message = {
+          id: '1',
+          role: 'assistant',
+          content: 'Tell me about a time when you faced a significant challenge at work. How did you approach it, and what was the outcome?',
+          timestamp: new Date(),
+        };
+        setMessages([fallbackQuestion]);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    generateFirstQuestion();
+  }, []);
 
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
@@ -39,7 +83,7 @@ export default function InterviewPanel() {
   }, [inputValue]);
 
   const handleSendMessage = async () => {
-    if (!inputValue.trim() || isLoading) return;
+    if (!inputValue.trim() || isLoading || interviewComplete) return;
 
     const userMessage: Message = {
       id: Date.now().toString(),
@@ -73,6 +117,11 @@ export default function InterviewPanel() {
 
       const data = await response.json();
       
+      // Check if interview is complete
+      if (data.interviewComplete) {
+        setInterviewComplete(true);
+      }
+      
       const assistantMessage: Message = {
         id: (Date.now() + 1).toString(),
         role: 'assistant',
@@ -102,17 +151,90 @@ export default function InterviewPanel() {
     }
   };
 
+  // Count main questions (exclude follow-ups)
+  const countMainQuestions = () => {
+    const assistantMessages = messages.filter(m => m.role === 'assistant');
+    
+    let mainQuestions = 0;
+    assistantMessages.forEach((msg, index) => {
+      const content = msg.content.toLowerCase().trim();
+      const length = msg.content.length;
+      
+      // Characteristics of follow-ups:
+      // 1. Short messages (under 120 chars)
+      // 2. Asking for clarification/more detail
+      const followUpPatterns = [
+        /^can you (tell me more|elaborate|explain|describe)/,
+        /^what (was|were|did|about|specific)/,
+        /^how (did|was|were)/,
+        /^could you (provide|explain|describe|elaborate)/,
+        /^tell me more/,
+        /^which/,
+      ];
+      
+      const isShortQuestion = length < 120 && content.includes('?');
+      const matchesFollowUpPattern = followUpPatterns.some(pattern => {
+        if (typeof pattern === 'boolean') return pattern;
+        return pattern.test(content);
+      });
+      
+      // It's a follow-up if it's short AND matches a follow-up pattern
+      const isFollowUp = isShortQuestion && matchesFollowUpPattern;
+      
+      // Also check: if previous assistant message was within last 2 messages and was long,
+      // this short one is likely a follow-up
+      if (index > 0 && length < 120 && content.includes('?')) {
+        const prevAssistantMsg = assistantMessages[index - 1];
+        if (prevAssistantMsg && prevAssistantMsg.content.length > 200) {
+          // Previous was a long main question, this short one is a follow-up
+          return; // Don't count as main question
+        }
+      }
+      
+      // Count as main question if it's NOT a follow-up
+      if (!isFollowUp) {
+        mainQuestions++;
+      }
+    });
+    
+    return mainQuestions;
+  };
+
   return (
     <div className="min-h-screen bg-gray-50">
       {/* Header */}
       <div className="bg-white border-b border-gray-200 shadow-sm">
         <div className="max-w-3xl mx-auto px-6 py-5">
-          <h1 className="text-xl font-semibold text-black">
-            Behavioral Interview
-          </h1>
-          <p className="text-xs text-gray-500 mt-1">
-            Practice with an AI interviewer
-          </p>
+          <div className="flex justify-between items-center">
+            <div>
+              <h1 className="text-xl font-semibold text-black">
+                Behavioral Interview
+              </h1>
+              <p className="text-xs text-gray-500 mt-1">
+                Practice with an AI interviewer
+              </p>
+            </div>
+            {!interviewComplete && (
+              <div className="text-right">
+                <div className="text-sm font-medium text-black">
+                  Question {Math.min(countMainQuestions(), 4)} of 4
+                </div>
+                <div className="text-xs text-gray-500 mt-1">
+                  {'Answer to continue'}
+                </div>
+              </div>
+            )}
+            {interviewComplete && (
+              <div className="text-right">
+                <div className="text-sm font-medium text-green-600">
+                  Interview Complete
+                </div>
+                <div className="text-xs text-gray-500 mt-1">
+                  Review your feedback below
+                </div>
+              </div>
+            )}
+          </div>
         </div>
       </div>
 
@@ -168,28 +290,36 @@ export default function InterviewPanel() {
 
         {/* Input Area */}
         <div className="bg-white border border-gray-200 rounded-lg shadow-sm p-4">
-          <div className="flex items-center gap-3">
-            <div className="flex flex-1 items-center h-10">
-              <textarea
-                ref={textareaRef}
-                value={inputValue}
-                onChange={(e) => setInputValue(e.target.value)}
-                onKeyPress={handleKeyPress}
-                placeholder="Type your response..."
-                className="w-full resize-none h-full px-3 py-2 bg-transparent border-none focus:outline-none text-black placeholder-gray-400 text-sm flex items-center"
-                rows={1}
-                disabled={isLoading}
-                style={{ minHeight: '40px' }}
-              />
+          {interviewComplete ? (
+            <div className="text-center py-2">
+              <p className="text-sm text-gray-600">
+                Interview completed! Review your feedback above.
+              </p>
             </div>
-            <button
-              onClick={handleSendMessage}
-              disabled={!inputValue.trim() || isLoading}
-              className="h-10 px-5 py-2 bg-black text-white text-sm font-medium rounded hover:bg-gray-800 focus:outline-none disabled:bg-gray-300 disabled:cursor-not-allowed transition-colors align-middle flex items-center"
-            >
-              Send
-            </button>
-          </div>
+          ) : (
+            <div className="flex items-center gap-3">
+              <div className="flex flex-1 items-center h-10">
+                <textarea
+                  ref={textareaRef}
+                  value={inputValue}
+                  onChange={(e) => setInputValue(e.target.value)}
+                  onKeyPress={handleKeyPress}
+                  placeholder="Type your response..."
+                  className="w-full resize-none h-full px-3 py-2 bg-transparent border-none focus:outline-none text-black placeholder-gray-400 text-sm flex items-center"
+                  rows={1}
+                  disabled={isLoading || interviewComplete}
+                  style={{ minHeight: '40px' }}
+                />
+              </div>
+              <button
+                onClick={handleSendMessage}
+                disabled={!inputValue.trim() || isLoading || interviewComplete}
+                className="h-10 px-5 py-2 bg-black text-white text-sm font-medium rounded hover:bg-gray-800 focus:outline-none disabled:bg-gray-300 disabled:cursor-not-allowed transition-colors align-middle flex items-center"
+              >
+                Send
+              </button>
+            </div>
+          )}
         </div>
       </div>
     </div>

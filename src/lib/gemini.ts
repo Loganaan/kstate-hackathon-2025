@@ -11,47 +11,42 @@ export class GeminiClient {
     this.ai = new GoogleGenAI({ apiKey });
   }
 
-  async generateQuestion(context: string) {
-    try {
-      const response = await this.ai.models.generateContent({
-        model: 'gemini-2.0-flash-exp',
-        contents: context,
-      });
-      return response.text;
-    } catch (error) {
-      console.error('Error generating question:', error);
-      throw error;
-    }
-  }
-
-  async evaluateResponse(question: string, userResponse: string) {
-    try {
-      const prompt = `As an interview evaluator, assess the following response:\n\nQuestion: ${question}\n\nCandidate's Response: ${userResponse}\n\nProvide constructive feedback on the response quality, relevance, and areas for improvement.`;
-      const response = await this.ai.models.generateContent({
-        model: 'gemini-2.0-flash-exp',
-        contents: prompt,
-      });
-      return response.text;
-    } catch (error) {
-      console.error('Error evaluating response:', error);
-      throw error;
-    }
-  }
-
   async chat(messages: Array<{ role: string; content: string }>) {
     try {
-      // Build the conversation history in the format expected by Gemini
-      const systemPrompt = `You are an experienced behavioral interview coach conducting a practice interview. Ask thoughtful follow-up questions based on the candidate's responses. Keep questions focused on behavioral scenarios using the STAR method (Situation, Task, Action, Result). Be encouraging but professional.`;
+      // Build the conversation history with clear role labels
+      const systemPrompt = `
+      [COMPANY NAME] is Koch Industries
+      You are an experienced behavioral interview coach simulating a real interview for [COMPANY NAME].
       
-      // Convert messages to Gemini format
-      const contents = [
-        systemPrompt,
-        ...messages.map(msg => msg.content)
-      ].join('\n\n');
+      RESPONSE GUIDELINES:
+      - You may ask ONE brief follow-up question ONLY if the candidate's answer lacks critical detail (missing Situation, Task, Action, or Result).
+      - If you just asked a short clarifying question, DO NOT ask another. Move to the next main question.
+      - Follow-ups must be ONE sentence asking for specific missing information.
+      - If the answer is satisfactory, give a brief acknowledgment (one sentence) and ask the next main question.
+      - Be selective with follow-ups - only when truly needed for incomplete answers.
+      
+      Ask thoughtful, realistic questions based on the candidate's responses, reflecting the values, culture, and leadership principles of [COMPANY NAME].
+      Keep all questions focused on behavioral scenarios using the STAR method (Situation, Task, Action, Result).
+      Be professional, conversational, and encouraging, but maintain the tone of an authentic company interviewer.
+      Do not generate responses for the candidate — only ask questions and respond as the interviewer from [COMPANY NAME].
+      `;
+      
+      // Format conversation with clear role indicators
+      const conversationHistory = messages.map(msg => {
+        if (msg.role === 'user') {
+          return `CANDIDATE: ${msg.content}`;
+        } else if (msg.role === 'assistant') {
+          return `INTERVIEWER: ${msg.content}`;
+        } else {
+          return msg.content; // system messages
+        }
+      }).join('\n\n');
+
+      const prompt = `${systemPrompt}\n\n${conversationHistory}\n\nINTERVIEWER:`;
 
       const response = await this.ai.models.generateContent({
-        model: 'gemini-2.0-flash-exp',
-        contents,
+        model: 'gemini-2.5-flash',
+        contents: prompt,
       });
       
       return response.text;
