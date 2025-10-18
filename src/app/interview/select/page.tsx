@@ -27,14 +27,14 @@ export default function InterviewSelectPage() {
   ];
 
   return (
-    <div className="bg-gradient-to-b from-gray-50 to-white min-h-[calc(100vh-8rem)]">
+    <div className="bg-gradient-to-b from-gray-50 to-white dark:from-gray-900 dark:to-gray-950 min-h-[calc(100vh-8rem)]">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-16">
         {/* Header */}
         <div className="text-center mb-16">
-          <h1 className="text-4xl sm:text-5xl font-bold text-gray-900 mb-4">
+          <h1 className="text-4xl sm:text-5xl font-bold text-gray-900 dark:text-gray-100 mb-4">
             Choose Your Interview Type
           </h1>
-          <p className="text-xl text-gray-600 max-w-2xl mx-auto">
+          <p className="text-xl text-gray-600 dark:text-gray-300 max-w-2xl mx-auto">
             Select the type of interview you&apos;d like to practice. Each session is tailored to help you improve specific skills.
           </p>
         </div>
@@ -55,31 +55,31 @@ export default function InterviewSelectPage() {
               >
                 <div
                   className={`
-                    bg-white rounded-2xl shadow-md p-8 h-full
+                    bg-white dark:bg-gray-800 rounded-2xl shadow-md p-8 h-full
                     transition-all duration-300 cursor-pointer
                     ${isHovered ? 'shadow-2xl scale-105' : 'hover:shadow-lg'}
                   `}
                 >
                   {/* Icon */}
                   <div className={`
-                    ${type.color === 'blue' ? 'bg-blue-100' : 'bg-green-100'}
+                    ${type.color === 'blue' ? 'bg-blue-100 dark:bg-blue-900/50' : 'bg-green-100 dark:bg-green-900/50'}
                     w-16 h-16 rounded-xl flex items-center justify-center mb-6
                     transition-transform duration-300
                     ${isHovered ? 'scale-110' : ''}
                   `}>
                     <Icon className={`
                       w-8 h-8
-                      ${type.color === 'blue' ? 'text-blue-600' : 'text-green-600'}
+                      ${type.color === 'blue' ? 'text-blue-600 dark:text-blue-400' : 'text-green-600 dark:text-green-400'}
                     `} />
                   </div>
 
                   {/* Title */}
-                  <h2 className="text-2xl font-semibold text-gray-900 mb-3">
+                  <h2 className="text-2xl font-semibold text-gray-900 dark:text-gray-100 mb-3">
                     {type.title}
                   </h2>
 
                   {/* Description */}
-                  <p className="text-gray-600 mb-6 leading-relaxed">
+                  <p className="text-gray-600 dark:text-gray-300 mb-6 leading-relaxed">
                     {type.description}
                   </p>
 
@@ -88,8 +88,8 @@ export default function InterviewSelectPage() {
                     inline-flex items-center gap-2 px-6 py-3 rounded-lg font-semibold
                     transition-all duration-200
                     ${type.color === 'blue' 
-                      ? 'bg-blue-600 text-white hover:bg-blue-700' 
-                      : 'bg-green-600 text-white hover:bg-green-700'
+                      ? 'bg-blue-600 text-white hover:bg-blue-700 dark:bg-blue-500 dark:hover:bg-blue-600' 
+                      : 'bg-green-600 text-white hover:bg-green-700 dark:bg-green-500 dark:hover:bg-green-600'
                     }
                     ${isHovered ? 'translate-x-2' : ''}
                   `}>
@@ -103,7 +103,7 @@ export default function InterviewSelectPage() {
 
         {/* Helper Text */}
         <div className="mt-12 text-center">
-          <p className="text-gray-500">
+          <p className="text-gray-500 dark:text-gray-400">
             Not sure which to choose? Try both! Each interview type offers unique learning opportunities.
           </p>
         </div>
