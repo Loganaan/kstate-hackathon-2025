@@ -5,7 +5,7 @@ import ThemeToggle from "@/components/ThemeToggle";
 
 export default function SideButtons() {
   return (
-    <div className="fixed top-1/4 left-2 flex flex-col space-y-4 z-50">
+    <div className="fixed top-1/4 left-4 flex flex-col space-y-4 z-50">
       {/* Behavioral Interview Button */}
       <Link
         href="/interview/behavioral"

@@ -12,17 +12,17 @@ export default function BehavioralInterviewPage() {
   const currentQuestion = "Tell me about a time when you had to deal with a difficult team member. How did you handle the situation?";
 
   return (
-    <div className="bg-gray-50 dark:bg-gray-950 min-h-[calc(100vh-8rem)]">
+    <div className="bg-gray-50 dark:bg-gray-950 min-h-[calc(100vh-8rem)] pl-20">
       {/* Header */}
       <div className="bg-white dark:bg-gray-900 border-b border-gray-200 dark:border-gray-800">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
+        <div className="max-w-7xl mx-auto px-6 sm:px-8 lg:px-12 py-4">
           <h1 className="text-2xl font-semibold text-gray-900 dark:text-gray-100">Behavioral Interview Session</h1>
           <p className="text-gray-600 dark:text-gray-400 mt-1">Question 1 of 5</p>
         </div>
       </div>
 
       {/* Main Content */}
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+      <div className="max-w-7xl mx-auto px-6 sm:px-8 lg:px-12 py-8">
         <div className="grid lg:grid-cols-3 gap-6">
           
           {/* Left Panel - Current Question */}
