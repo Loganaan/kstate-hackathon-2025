@@ -221,12 +221,6 @@ export default function TechnicalInterviewPage() {
     }
   }, [liveProctorMode]);
 
-  // Handle language change - Python only, no switching
-  const handleLanguageChange = () => {
-    // No-op since we only support Python
-    return;
-  };
-
   // Handle Run Code (TODO: Connect to backend)
   const handleRunCode = async () => {
     setIsRunning(true);
@@ -255,7 +249,7 @@ export default function TechnicalInterviewPage() {
 
     // Simulate running code with API test cases
     setTimeout(() => {
-      const results = testCasesToRun.map((tc, idx) => {
+      const results = testCasesToRun.map((tc) => {
         // Simulate test results (randomly pass/fail for demo)
         const passed = Math.random() > 0.25;
         return {
@@ -296,7 +290,7 @@ export default function TechnicalInterviewPage() {
 
     // Simulate AI feedback
     setTimeout(() => {
-      let mockFeedback = `**Code Analysis:**
+      const mockFeedback = `**Code Analysis:**
 
 ✅ **Strengths:**
 - Clean and readable code structure
@@ -452,10 +446,8 @@ Keep up the good work! Review the test cases and iterate on your solution.`;
         <div className="flex flex-col bg-gray-50 dark:bg-gray-950 overflow-hidden">
           {/* Code Editor Section */}
           <CodeEditor
-            language={language}
             code={code}
             onCodeChange={setCode}
-            onLanguageChange={handleLanguageChange}
             onRunCode={handleRunCode}
             onRequestFeedback={handleRequestFeedback}
             onReset={handleReset}

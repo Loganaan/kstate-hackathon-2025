@@ -139,7 +139,6 @@ export async function generateQuestions(
   
   let attempts = 0;
   const maxAttempts = 3; // Increased retry attempts
-  let lastError: Error | null = null;
   
   while (attempts < maxAttempts) {
     attempts++;
@@ -178,7 +177,6 @@ export async function generateQuestions(
         topicTags: normalizeTags(q.topicTags)
       }));
       
-      console.log(`[Gemini API] Successfully generated ${finalQuestions.length} questions`);
       console.log(`[Gemini API] Successfully generated ${finalQuestions.length} questions`);
       return finalQuestions;
       
@@ -230,5 +228,5 @@ export async function generateQuestions(
     }
   }
   
-  throw new Error('Failed to generate questions');
+  throw new Error(`Failed to generate questions after ${maxAttempts} attempts`);
 }

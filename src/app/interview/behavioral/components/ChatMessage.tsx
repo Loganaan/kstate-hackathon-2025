@@ -16,7 +16,7 @@ export default function ChatMessage({ role, content, timestamp }: ChatMessagePro
             : 'bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 border border-gray-200 dark:border-gray-700'
         }`}
       >
-        <p className="text-sm leading-relaxed">{content}</p>
+        <p className="text-sm leading-relaxed whitespace-pre-wrap">{content}</p>
         <span
           className={`text-xs mt-2 block ${
             role === 'user' ? 'text-white/80' : 'text-gray-500 dark:text-gray-400'
