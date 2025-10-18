@@ -121,17 +121,17 @@ function getFormatInstructions(format: string): string {
     
     case 'coding':
       return `Format: Generate coding questions with:
-- Clear problem statement
-- Starter code in an appropriate language (JavaScript, Python, Java, etc.)
+- Clear problem statement (be concise - aim for 2-3 sentences)
+- Starter code in PYTHON only (use Python syntax and conventions)
 - Comprehensive test cases (MINIMUM 3-5 test cases covering different scenarios)
-- Solution outline describing the approach
+- Solution outline describing the approach (keep under 200 words)
 
 For test cases - CRITICAL INSTRUCTIONS:
 - Include at least 3-5 diverse test cases in the testCases array
 - Each test case MUST have ALL THREE fields filled with actual values:
   * "input": The actual input parameters (e.g., "arr = [1,2,3], target = 5")
   * "output": The EXACT expected output value (e.g., "true", "15", "[1,2]", "null")
-  * "explanation": Why this test case matters and what it tests
+  * "explanation": Why this test case matters and what it tests (1 sentence max)
 - NEVER leave "output" field empty - always provide the concrete expected result
 - Cover these scenarios:
   * Basic/happy path case (normal input with typical output)
@@ -139,13 +139,14 @@ For test cases - CRITICAL INSTRUCTIONS:
   * Corner cases (single element, maximum size, minimum values)
   * Invalid/error cases if applicable
 - Example format: {"input": "nums = [2,7,11,15], target = 9", "output": "[0,1]", "explanation": "Basic case: finds indices of two numbers that sum to target"}
-- For the explanation field at the question level: describe constraints, time/space complexity, and key edge cases to consider`;
+- For the explanation field at the question level: describe constraints, time/space complexity, and key edge cases to consider (keep concise - under 150 words)`;
     
     case 'free-response':
       return `Format: Generate open-ended questions that require written explanations (e.g., system design, architecture decisions, trade-offs). 
 
 For the explanation field - CRITICAL INSTRUCTIONS:
 - Write a conversational, practical explanation of how you would actually solve this problem
+- Keep it concise but informative (aim for 250-400 words max)
 - Start with a high-level approach, then dive into specifics
 - Use concrete examples and real technologies (Redis, Kafka, PostgreSQL, etc.)
 - Explain the "why" behind decisions, not just the "what"
@@ -153,11 +154,12 @@ For the explanation field - CRITICAL INSTRUCTIONS:
   * "First, I'd start with X because..."
   * "The key components would be..."
   * "For handling Y, I'd use Z because..."
-  * Include diagrams descriptions, data flow, specific services
+  * Include specific services and data flow
 - Avoid listing abstract concepts or bullet-point checklists
 - Instead of "A good answer should cover:" write "Here's how I'd approach this:"
 - Make it sound like a senior engineer explaining their solution, not an evaluation rubric
-- Be specific about implementation details, technologies, and trade-offs`;
+- Be specific about implementation details, technologies, and trade-offs
+- Keep explanations focused and avoid excessive detail`;
     
     case 'mixed':
       return `Format: Generate a mix of question types (multiple-choice, coding, and free-response). Vary the formats across the questions. Each question should follow the format requirements for its type.`;

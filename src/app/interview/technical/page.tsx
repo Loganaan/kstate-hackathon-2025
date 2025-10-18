@@ -78,9 +78,9 @@ export default function TechnicalInterviewPage() {
   const [loadingQuestions, setLoadingQuestions] = useState(false);
   const [setupError, setSetupError] = useState<string | null>(null);
 
-  // Editor state
-  const [language, setLanguage] = useState<'javascript' | 'python' | 'java'>('javascript');
-  const [code, setCode] = useState(MOCK_PROBLEM.starterCode.javascript);
+  // Editor state - Python only
+  const [language] = useState<'python'>('python');
+  const [code, setCode] = useState(MOCK_PROBLEM.starterCode.python);
 
   // Session state
   const [isRunning, setIsRunning] = useState(false);
@@ -119,6 +119,8 @@ export default function TechnicalInterviewPage() {
         constraints: currentApiQuestion.explanation ? [currentApiQuestion.explanation] : [],
       }
     : MOCK_PROBLEM;
+
+
 
   // Handle interview setup submission
   const handleSetupSubmit = async (setupData: {
@@ -166,7 +168,9 @@ export default function TechnicalInterviewPage() {
   // Update code when question changes
   useEffect(() => {
     if (currentApiQuestion?.starterCode) {
-      setCode(currentApiQuestion.starterCode);
+      // Use the starter code directly (Python only)
+      const starterCode = currentApiQuestion.starterCode || '# Write your solution here\ndef solution():\n    pass';
+      setCode(starterCode);
       setOutput('');
       setFeedback('');
       setTestResults([]);
@@ -217,12 +221,10 @@ export default function TechnicalInterviewPage() {
     }
   }, [liveProctorMode]);
 
-  // Handle language change
-  const handleLanguageChange = (newLang: 'javascript' | 'python' | 'java') => {
-    setLanguage(newLang);
-    setCode(MOCK_PROBLEM.starterCode[newLang]);
-    setOutput('');
-    setTestResults([]);
+  // Handle language change - Python only, no switching
+  const handleLanguageChange = () => {
+    // No-op since we only support Python
+    return;
   };
 
   // Handle Run Code (TODO: Connect to backend)
@@ -323,7 +325,9 @@ Keep up the good work! Review the test cases and iterate on your solution.`;
 
   // Handle Reset
   const handleReset = () => {
-    setCode(MOCK_PROBLEM.starterCode[language]);
+    // Reset to the starter code from current question
+    const starterCode = currentApiQuestion?.starterCode || MOCK_PROBLEM.starterCode.python;
+    setCode(starterCode);
     setOutput('');
     setFeedback('');
     setTestResults([]);

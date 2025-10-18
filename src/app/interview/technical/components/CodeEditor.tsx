@@ -50,20 +50,12 @@ export default function CodeEditor({
           <div className="flex items-center gap-2">
             <Code2 className="w-4 h-4 text-gray-400" />
             <span className="text-gray-300 text-sm font-mono">
-              solution.{getFileExtension()}
+              solution.py
             </span>
           </div>
-          <select
-            value={language}
-            onChange={(e) =>
-              onLanguageChange(e.target.value as 'javascript' | 'python' | 'java')
-            }
-            className="bg-gray-700 dark:bg-gray-900 text-gray-300 text-sm rounded px-3 py-1 border-none focus:ring-2 focus:ring-[rgba(76,166,38,1)] cursor-pointer"
-          >
-            <option value="javascript">JavaScript</option>
-            <option value="python">Python</option>
-            <option value="java">Java</option>
-          </select>
+          <div className="bg-gray-700 dark:bg-gray-900 text-gray-300 text-sm rounded px-3 py-1">
+            Python
+          </div>
         </div>
 
         {/* Action Buttons */}

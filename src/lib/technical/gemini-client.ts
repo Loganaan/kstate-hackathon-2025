@@ -125,7 +125,7 @@ export async function generateQuestions(
       temperature: 0.4, // Lower temperature for more consistent JSON formatting
       topK: 40,
       topP: 0.9,
-      maxOutputTokens: 8192,
+      maxOutputTokens: 16384, // Increased from 8192 to allow longer responses
       responseMimeType: "application/json", // Request JSON format explicitly
     }
   });
@@ -138,19 +138,29 @@ export async function generateQuestions(
   const fullPrompt = `${systemPrompt}\n\n${userPrompt}`;
   
   let attempts = 0;
-  const maxAttempts = 2;
+  const maxAttempts = 3; // Increased retry attempts
+  let lastError: Error | null = null;
   
   while (attempts < maxAttempts) {
     attempts++;
     
     try {
       // Call Gemini
+      console.log(`[Gemini API] Attempt ${attempts}/${maxAttempts}`);
       const result = await model.generateContent(fullPrompt);
       const response = result.response;
       const text = response.text();
       
       if (!text) {
         throw new Error('Empty response from Gemini');
+      }
+      
+      console.log(`[Gemini API] Response length: ${text.length} characters`);
+      
+      // Check if response appears truncated
+      const trimmed = text.trim();
+      if (!trimmed.endsWith('}') && !trimmed.endsWith(']')) {
+        console.warn('[Gemini API] Response may be truncated, missing closing bracket');
       }
       
       // Parse JSON
@@ -168,6 +178,8 @@ export async function generateQuestions(
         topicTags: normalizeTags(q.topicTags)
       }));
       
+      console.log(`[Gemini API] Successfully generated ${finalQuestions.length} questions`);
+      console.log(`[Gemini API] Successfully generated ${finalQuestions.length} questions`);
       return finalQuestions;
       
     } catch (error) {
@@ -181,18 +193,24 @@ export async function generateQuestions(
         throw new Error(`Failed to generate valid questions after ${maxAttempts} attempts`);
       }
       
+      console.log(`[Gemini API] Retrying (${attempts + 1}/${maxAttempts})...`);
+      
       // Retry with clarification prompt
       const retryPrompt = buildRetryPrompt();
       const retryFullPrompt = `${systemPrompt}\n\n${userPrompt}\n\n${retryPrompt}`;
       
       try {
+        console.log('[Gemini API] Sending retry request with clarification...');
         const retryResult = await model.generateContent(retryFullPrompt);
         const retryResponse = retryResult.response;
         const retryText = retryResponse.text();
         
         if (!retryText) {
+          console.warn('[Gemini API] Retry returned empty response');
           continue;
         }
+        
+        console.log(`[Gemini API] Retry response length: ${retryText.length} characters`);
         
         const retryParsed = parseGeminiJSON(retryText);
         const retryValidated = GeminiResponseSchema.parse(retryParsed);
@@ -202,6 +220,7 @@ export async function generateQuestions(
           topicTags: normalizeTags(q.topicTags)
         }));
         
+        console.log(`[Gemini API] Retry successful! Generated ${retryFinal.length} questions`);
         return retryFinal;
         
       } catch (retryError) {
