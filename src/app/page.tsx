@@ -3,12 +3,14 @@
 
 import Link from "next/link";
 import { useEffect, useState } from "react";
+import { useSplash } from "@/components/SplashProvider";
 
 export default function Home() {
-
-  const [showSplash, setShowSplash] = useState(true);
+  const { showSplash, setShowSplash } = useSplash();
   const [typedText, setTypedText] = useState("");
+  const [headerTypedText, setHeaderTypedText] = useState("");
   const splashText = "Welcome to TechReady";
+  const headerText = "Ready to start interview prep?";
 
   useEffect(() => {
     let charIndex = 0;
@@ -23,6 +25,37 @@ export default function Home() {
     }, 70);
     return () => clearInterval(typingInterval);
   }, []);
+
+  // Header text typing animation - starts after splash
+  useEffect(() => {
+    if (showSplash) {
+      setHeaderTypedText("");
+      return;
+    }
+
+    let charIndex = 0;
+    const typingInterval = setInterval(() => {
+      if (charIndex < headerText.length) {
+        setHeaderTypedText(headerText.slice(0, charIndex + 1));
+        charIndex++;
+      } else {
+        clearInterval(typingInterval);
+      }
+    }, 50);
+    return () => clearInterval(typingInterval);
+  }, [showSplash]);
+
+  // Prevent scrolling when splash screen is visible
+  useEffect(() => {
+    if (showSplash) {
+      document.body.style.overflow = 'hidden';
+    } else {
+      document.body.style.overflow = 'unset';
+    }
+    return () => {
+      document.body.style.overflow = 'unset';
+    };
+  }, [showSplash]);
 
   return (
     <div className="min-h-screen bg-white dark:bg-gray-900 flex items-center justify-center transition-colors relative overflow-hidden">
@@ -66,6 +99,25 @@ export default function Home() {
           ></span>
         </span>
       </div>
+      
+      {/* Header Text with Typing Animation */}
+      <div className="absolute top-24 left-1/2 -translate-x-1/2 z-40">
+        <p className="text-2xl text-black dark:text-white font-medium whitespace-nowrap">
+          {headerTypedText}
+          <span
+            className={`inline-block ml-1 animate-pulse align-bottom rounded bg-black dark:bg-white`}
+            style={{
+              width: '0.5em',
+              height: '1em',
+              fontSize: '1.5rem',
+              verticalAlign: 'bottom',
+              display: 'inline-block',
+              backgroundColor: headerTypedText.length < headerText.length ? undefined : 'transparent'
+            }}
+          ></span>
+        </p>
+      </div>
+
       {/* Left Section - Behavioral Interview */}
       <Link href="/interview/behavioral" className="flex flex-col items-center group relative mt-8">
         <div className="flex items-center mb-8 relative">
