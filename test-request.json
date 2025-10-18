@@ -1,0 +1,10 @@
+{
+  "company": "Google",
+  "role": "Software Engineer",
+  "seniority": "mid",
+  "jobDescription": "We are seeking a talented mid-level software engineer with strong algorithmic problem-solving skills and experience in distributed systems. You will work on large-scale infrastructure that serves billions of users worldwide. The ideal candidate has deep knowledge of system design, algorithms, and data structures. You'll be responsible for designing and implementing scalable solutions, optimizing performance, and collaborating with cross-functional teams. Strong coding skills in Java, C++, or Python are required. Experience with cloud platforms (GCP, AWS) and distributed databases is a plus.",
+  "difficulty": "medium",
+  "topics": ["algorithms", "system-design", "distributed-systems"],
+  "count": 3,
+  "format": "mixed"
+}

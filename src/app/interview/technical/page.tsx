@@ -8,8 +8,38 @@ import ConsoleOutput from './components/ConsoleOutput';
 import ProctorModal from './components/ProctorModal';
 import ProctorHintBox from './components/ProctorHintBox';
 import StatusBar from './components/StatusBar';
+import InterviewSetup from './components/InterviewSetup';
 
-// Mock problem data
+interface TestCase {
+  input: string;
+  output: string;
+  explanation?: string;
+}
+
+interface Choice {
+  label: string;
+  text: string;
+  correct?: boolean;
+}
+
+interface ApiQuestion {
+  id: string;
+  company: string;
+  role: string;
+  seniority?: string;
+  difficulty: string;
+  topicTags: string[];
+  format: string;
+  prompt: string;
+  starterCode?: string;
+  solutionOutline?: string;
+  testCases?: TestCase[];
+  choices?: Choice[];
+  explanation?: string;
+  createdAt: string;
+}
+
+// Mock problem data (fallback)
 const MOCK_PROBLEM = {
   title: 'Two Sum',
   difficulty: 'Easy',
@@ -41,9 +71,16 @@ const MOCK_PROBLEM = {
 };
 
 export default function TechnicalInterviewPage() {
-  // Editor state
-  const [language, setLanguage] = useState<'javascript' | 'python' | 'java'>('javascript');
-  const [code, setCode] = useState(MOCK_PROBLEM.starterCode.javascript);
+  // API Integration state
+  const [isSetupComplete, setIsSetupComplete] = useState(false);
+  const [apiQuestions, setApiQuestions] = useState<ApiQuestion[]>([]);
+  const [currentQuestionIndex, setCurrentQuestionIndex] = useState(0);
+  const [loadingQuestions, setLoadingQuestions] = useState(false);
+  const [setupError, setSetupError] = useState<string | null>(null);
+
+  // Editor state - Python only
+  const [language] = useState<'python'>('python');
+  const [code, setCode] = useState(MOCK_PROBLEM.starterCode.python);
 
   // Session state
   const [isRunning, setIsRunning] = useState(false);
@@ -65,7 +102,83 @@ export default function TechnicalInterviewPage() {
   const [timeElapsed, setTimeElapsed] = useState(0);
   const timerIntervalRef = useRef<NodeJS.Timeout | null>(null);
 
-  // Start timer on mount
+  // Get current question (API or mock)
+  const currentApiQuestion = apiQuestions[currentQuestionIndex];
+  const currentProblem = currentApiQuestion
+    ? {
+        title: `Q${currentQuestionIndex + 1}: ${currentApiQuestion.prompt.substring(0, 50)}...`,
+        difficulty: currentApiQuestion.difficulty,
+        description: currentApiQuestion.prompt,
+        examples: currentApiQuestion.testCases
+          ? currentApiQuestion.testCases.map((tc) => ({
+              input: tc.input,
+              output: tc.output,
+              explanation: tc.explanation || '',
+            }))
+          : [],
+        constraints: currentApiQuestion.explanation ? [currentApiQuestion.explanation] : [],
+      }
+    : MOCK_PROBLEM;
+
+
+
+  // Handle interview setup submission
+  const handleSetupSubmit = async (setupData: {
+    company: string;
+    role: string;
+    seniority: string;
+    difficulty: string;
+    jobDescription: string;
+    count: number;
+    format: string;
+  }) => {
+    setLoadingQuestions(true);
+    setSetupError(null);
+
+    try {
+      const response = await fetch('/api/questions', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(setupData),
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error?.message || 'Failed to generate questions');
+      }
+
+      const data = await response.json();
+      setApiQuestions(data.questions);
+      setIsSetupComplete(true);
+      setCurrentQuestionIndex(0);
+      
+      // Set initial code from first question
+      if (data.questions[0]?.starterCode) {
+        setCode(data.questions[0].starterCode);
+      }
+    } catch (err) {
+      setSetupError(err instanceof Error ? err.message : 'An error occurred');
+    } finally {
+      setLoadingQuestions(false);
+    }
+  };
+
+  // Update code when question changes
+  useEffect(() => {
+    if (currentApiQuestion?.starterCode) {
+      // Use the starter code directly (Python only)
+      const starterCode = currentApiQuestion.starterCode || '# Write your solution here\ndef solution():\n    pass';
+      setCode(starterCode);
+      setOutput('');
+      setFeedback('');
+      setTestResults([]);
+      setActiveTab('question');
+    }
+  }, [currentQuestionIndex, currentApiQuestion]);
+
+  // Start timer on mount or when setup is complete
   useEffect(() => {
     timerIntervalRef.current = setInterval(() => {
       setTimeElapsed((prev) => prev + 1);
@@ -108,33 +221,77 @@ export default function TechnicalInterviewPage() {
     }
   }, [liveProctorMode]);
 
-  // Handle language change
-  const handleLanguageChange = (newLang: 'javascript' | 'python' | 'java') => {
-    setLanguage(newLang);
-    setCode(MOCK_PROBLEM.starterCode[newLang]);
-    setOutput('');
-    setTestResults([]);
-  };
-
-  // Handle Run Code (TODO: Connect to backend)
+  // Handle Run Code - Execute Python code against test cases
   const handleRunCode = async () => {
     setIsRunning(true);
     setOutput('Running code...');
 
-    // Simulate running code
-    setTimeout(() => {
-      const mockResults = [
-        { passed: true, input: '[2,7,11,15], 9', expected: '[0,1]', actual: '[0,1]' },
-        { passed: true, input: '[3,2,4], 6', expected: '[1,2]', actual: '[1,2]' },
-        { passed: false, input: '[3,3], 6', expected: '[0,1]', actual: '[]' },
-      ];
-
-      setTestResults(mockResults);
-      setOutput(
-        `✓ Test 1 passed\n✓ Test 2 passed\n✗ Test 3 failed\n\nExpected: [0,1]\nActual: []`
-      );
+    // Use API test cases if available
+    const testCasesToRun = currentApiQuestion?.testCases || [];
+    
+    if (testCasesToRun.length === 0) {
+      setOutput('No test cases available for this problem.');
       setIsRunning(false);
-    }, 1500);
+      return;
+    }
+
+    try {
+      // Call the execute API endpoint
+      const response = await fetch('/api/execute', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          code,
+          testCases: testCasesToRun,
+          language: 'python',
+        }),
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || 'Failed to execute code');
+      }
+
+      const data = await response.json();
+      const results = data.results;
+
+      setTestResults(results);
+      
+      const passedCount = results.filter((r: { passed: boolean }) => r.passed).length;
+      const totalCount = results.length;
+      
+      let outputText = '';
+      results.forEach((r: { passed: boolean; input: string; expected: string; actual: string; error?: string }, idx: number) => {
+        outputText += `${r.passed ? '✓' : '✗'} Test ${idx + 1}: ${r.passed ? 'Passed' : 'Failed'}\n`;
+        
+        // Always show the details for better feedback
+        outputText += `  Input: ${r.input}\n`;
+        outputText += `  Expected: ${r.expected}\n`;
+        outputText += `  Actual: ${r.actual}\n`;
+        
+        if (!r.passed && r.error) {
+          outputText += `  Error: ${r.error}\n`;
+        }
+        outputText += '\n';
+      });
+      
+      outputText += `\n${passedCount}/${totalCount} tests passed`;
+      
+      if (passedCount === totalCount) {
+        outputText += '\n\n🎉 All tests passed! Great job!';
+      }
+      
+      setOutput(outputText);
+    } catch (error) {
+      setOutput(
+        `Error executing code:\n${error instanceof Error ? error.message : 'Unknown error'}\n\nPlease check your code for syntax errors.`
+      );
+      setTestResults([]);
+    } finally {
+      setIsRunning(false);
+    }
   };
 
   // Handle Request Feedback (TODO: Connect to AI backend)
@@ -152,21 +309,20 @@ export default function TechnicalInterviewPage() {
 - Good variable naming
 
 ⚠️ **Areas for Improvement:**
-- Current approach has O(n²) time complexity due to nested loops
-- Consider using a hash map for O(n) optimization
-- Edge case handling for duplicate values could be improved
+- Consider edge cases and boundary conditions
+- Look for optimization opportunities
+- Test with various input sizes
 
-💡 **Optimization Suggestion:**
-Use a single pass with a hash map to store complements:
-1. Iterate through the array once
-2. For each number, check if (target - number) exists in the map
-3. If found, return the indices; otherwise, add current number to map
+💡 **Solution Approach:**
+${currentApiQuestion?.solutionOutline || 'Try to break down the problem into smaller steps and think about the optimal data structure.'}
 
-**Complexity:**
-- Time: O(n²) → Can be optimized to O(n)
-- Space: O(1) → Would become O(n) with hash map
+${currentApiQuestion?.explanation ? `\n**Additional Context:**\n${currentApiQuestion.explanation}` : ''}
 
-Keep up the good work! Try implementing the hash map approach for better performance.`;
+**Complexity Considerations:**
+- Analyze time and space complexity
+- Consider trade-offs between different approaches
+
+Keep up the good work! Review the test cases and iterate on your solution.`;
 
       setFeedback(mockFeedback);
       setIsFetchingFeedback(false);
@@ -175,7 +331,9 @@ Keep up the good work! Try implementing the hash map approach for better perform
 
   // Handle Reset
   const handleReset = () => {
-    setCode(MOCK_PROBLEM.starterCode[language]);
+    // Reset to the starter code from current question
+    const starterCode = currentApiQuestion?.starterCode || MOCK_PROBLEM.starterCode.python;
+    setCode(starterCode);
     setOutput('');
     setFeedback('');
     setTestResults([]);
@@ -202,12 +360,37 @@ Keep up the good work! Try implementing the hash map approach for better perform
     setProctorHints([]);
   };
 
+  // Handle Next Question
+  const handleNextQuestion = () => {
+    if (currentQuestionIndex < apiQuestions.length - 1) {
+      setCurrentQuestionIndex(currentQuestionIndex + 1);
+    }
+  };
+
+  // Handle Previous Question
+  const handlePreviousQuestion = () => {
+    if (currentQuestionIndex > 0) {
+      setCurrentQuestionIndex(currentQuestionIndex - 1);
+    }
+  };
+
+  // Show setup form if not complete
+  if (!isSetupComplete) {
+    return (
+      <InterviewSetup
+        onSubmit={handleSetupSubmit}
+        loading={loadingQuestions}
+        error={setupError}
+      />
+    );
+  }
+
   return (
     <div className="bg-gray-50 dark:bg-gray-950 min-h-screen pl-20">
       {/* Header */}
       <SessionHeader
-        title={MOCK_PROBLEM.title}
-        difficulty={MOCK_PROBLEM.difficulty}
+        title={currentProblem.title}
+        difficulty={currentProblem.difficulty}
         timeElapsed={timeElapsed}
         liveProctorMode={liveProctorMode}
         onToggleProctor={handleToggleProctor}
@@ -223,11 +406,48 @@ Keep up the good work! Try implementing the hash map approach for better perform
         onStart={handleStartProctor}
       />
 
+      {/* Question Navigation Bar (only show if using API questions) */}
+      {apiQuestions.length > 0 && (
+        <div className="bg-white dark:bg-gray-900 border-b border-gray-200 dark:border-gray-800 px-6 py-3">
+          <div className="flex items-center justify-between max-w-7xl mx-auto">
+            <div className="flex items-center gap-4">
+              <button
+                onClick={handlePreviousQuestion}
+                disabled={currentQuestionIndex === 0}
+                className="px-4 py-2 bg-gray-200 dark:bg-gray-800 text-gray-700 dark:text-gray-300 rounded-md hover:bg-gray-300 dark:hover:bg-gray-700 disabled:opacity-50 disabled:cursor-not-allowed font-medium"
+              >
+                ← Previous
+              </button>
+              <span className="text-gray-700 dark:text-gray-300 font-medium">
+                Question {currentQuestionIndex + 1} of {apiQuestions.length}
+              </span>
+              <button
+                onClick={handleNextQuestion}
+                disabled={currentQuestionIndex === apiQuestions.length - 1}
+                className="px-4 py-2 bg-gray-200 dark:bg-gray-800 text-gray-700 dark:text-gray-300 rounded-md hover:bg-gray-300 dark:hover:bg-gray-700 disabled:opacity-50 disabled:cursor-not-allowed font-medium"
+              >
+                Next →
+              </button>
+            </div>
+            <div className="flex items-center gap-2">
+              {currentApiQuestion?.topicTags.slice(0, 3).map((tag, idx) => (
+                <span
+                  key={idx}
+                  className="px-3 py-1 bg-blue-100 dark:bg-blue-900 text-blue-800 dark:text-blue-200 rounded-full text-sm font-medium"
+                >
+                  {tag}
+                </span>
+              ))}
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* Main Content - 3 Panel Layout */}
-      <div className="grid lg:grid-cols-2 gap-0" style={{ height: 'calc(100vh - 10rem)' }}>
+      <div className="grid lg:grid-cols-2 gap-0" style={{ height: apiQuestions.length > 0 ? 'calc(100vh - 14rem)' : 'calc(100vh - 10rem)' }}>
         {/* Left Panel - Problem Description with Tabs */}
         <ProblemPanel
-          problem={MOCK_PROBLEM}
+          problem={currentProblem}
           activeTab={activeTab}
           onTabChange={setActiveTab}
           feedback={feedback}
@@ -238,10 +458,8 @@ Keep up the good work! Try implementing the hash map approach for better perform
         <div className="flex flex-col bg-gray-50 dark:bg-gray-950 overflow-hidden">
           {/* Code Editor Section */}
           <CodeEditor
-            language={language}
             code={code}
             onCodeChange={setCode}
-            onLanguageChange={handleLanguageChange}
             onRunCode={handleRunCode}
             onRequestFeedback={handleRequestFeedback}
             onReset={handleReset}
@@ -258,7 +476,7 @@ Keep up the good work! Try implementing the hash map approach for better perform
       <StatusBar
         language={language}
         testsPassed={testResults.filter((t) => t.passed).length}
-        totalTests={testResults.length || 5}
+        totalTests={currentApiQuestion?.testCases?.length || testResults.length || 5}
         liveProctorMode={liveProctorMode}
       />
     </div>
