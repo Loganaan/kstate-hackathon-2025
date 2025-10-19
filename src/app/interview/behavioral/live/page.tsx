@@ -37,7 +37,10 @@ function LiveInterviewSessionContent() {
   // Deepgram hook for speech recognition
   const { startRecording, stopRecording, isRecording } = useDeepgram({
     onTranscript: (text) => {
-      setTranscript(prev => prev + ' ' + text);
+      setTranscript(prev => {
+        const newTranscript = prev ? prev + ' ' + text : text;
+        return newTranscript.trim();
+      });
     },
     onError: (error) => {
       console.error('Deepgram error:', error);
@@ -158,8 +161,10 @@ function LiveInterviewSessionContent() {
   const stopListening = async () => {
     stopRecording();
 
-    if (transcript.trim()) {
-      await processUserResponse(transcript.trim());
+    const currentTranscript = transcript.trim();
+    if (currentTranscript) {
+      setTranscript(''); // Clear immediately to prevent reuse
+      await processUserResponse(currentTranscript);
     }
   };
 
@@ -210,8 +215,7 @@ function LiveInterviewSessionContent() {
 
       // Start listening again for next answer
       setTimeout(() => {
-        setTranscript('');
-        startListening();
+        startListening(); // startListening already clears transcript
       }, 500);
     } catch (error) {
       console.error('Error processing response:', error);
