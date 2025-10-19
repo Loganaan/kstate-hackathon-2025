@@ -40,7 +40,7 @@ export default function RootLayout({
           <AuthProvider>
             <SplashProvider>
               <SideButtons />
-              <div className="w-full flex justify-between items-center px-6 mt-0 sticky top-0 z-50 py-2 bg-white dark:bg-gray-900 transition-colors border-b border-gray-200 dark:border-gray-800" style={{ background: undefined }}>
+              <div className="w-full flex justify-center mt-0 sticky top-0 z-50 py-3 bg-white dark:bg-gray-900 border-b border-gray-200 dark:border-gray-800 shadow-sm transition-colors">
                 <div className="flex-1 flex justify-center">
                   <ThemeLogo />
                 </div>
@@ -53,6 +53,15 @@ export default function RootLayout({
               </main>
             </SplashProvider>
           </AuthProvider>
+          <SplashProvider>
+            <SideButtons />
+            <div className="w-full flex justify-center mt-0 sticky top-0 z-50 py-3 bg-white dark:bg-gray-900 border-b border-gray-200 dark:border-gray-800 shadow-sm transition-colors">
+              <ThemeLogo />
+            </div>
+            <main>
+              {children}
+            </main>
+          </SplashProvider>
         </ThemeProvider>
       </body>
     </html>
