@@ -121,9 +121,13 @@ export default function TechnicalInterviewPage() {
 
   // AI Proctor mode
   const [liveProctorMode, setLiveProctorMode] = useState(false);
-  const [proctorHints, setProctorHints] = useState<string[]>([]);
+  const [proctorMessages, setProctorMessages] = useState<Array<{ role: 'user' | 'assistant'; content: string }>>([]);
   const [showProctorModal, setShowProctorModal] = useState(false);
-  const proctorIntervalRef = useRef<NodeJS.Timeout | null>(null);
+  const [isRecording, setIsRecording] = useState(false);
+  const [isProcessingProctor, setIsProcessingProctor] = useState(false);
+  const mediaRecorderRef = useRef<MediaRecorder | null>(null);
+  const audioChunksRef = useRef<Blob[]>([]);
+  const recognitionRef = useRef<any>(null);
 
   // Timer
   const [timeElapsed, setTimeElapsed] = useState(0);
@@ -233,34 +237,152 @@ export default function TechnicalInterviewPage() {
   }, []);
 
   // Live Proctor Mode simulation
+  // Initialize AI Proctor conversation when activated
   useEffect(() => {
-    if (liveProctorMode) {
-      const hints = [
-        '💡 AI Proctor: Consider using a hash map for O(n) time complexity',
-        '👀 AI Proctor: Remember to check for edge cases',
-        '🎯 AI Proctor: Your approach looks good! Keep going',
-        '⚡ AI Proctor: Try to optimize your solution for better performance',
-        "✨ AI Proctor: Don't forget to handle negative numbers",
-      ];
-
-      let hintIndex = 0;
-      proctorIntervalRef.current = setInterval(() => {
-        setProctorHints((prev) => [...prev, hints[hintIndex % hints.length]]);
-        hintIndex++;
-      }, 8000); // New hint every 8 seconds
-
-      return () => {
-        if (proctorIntervalRef.current) {
-          clearInterval(proctorIntervalRef.current);
-        }
-      };
-    } else {
-      setProctorHints([]);
-      if (proctorIntervalRef.current) {
-        clearInterval(proctorIntervalRef.current);
-      }
+    if (liveProctorMode && proctorMessages.length === 0) {
+      // Start the conversation by getting AI's first question
+      initiateProctorConversation();
     }
   }, [liveProctorMode]);
+
+  const initiateProctorConversation = async () => {
+    setIsProcessingProctor(true);
+    try {
+      const response = await fetch('/api/proctor-chat', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          questionTitle: currentProblem.title,
+          questionDescription: currentProblem.description,
+          solutionOutline: currentApiQuestion?.solutionOutline || '',
+          code: code,
+          conversationHistory: [],
+        }),
+      });
+
+      const data = await response.json();
+      if (data.success) {
+        setProctorMessages([{ role: 'assistant', content: data.message }]);
+      }
+    } catch (error) {
+      console.error('Error starting proctor:', error);
+      setProctorMessages([
+        {
+          role: 'assistant',
+          content: "Hi! I'm your AI Proctor. Can you walk me through how you'd approach this problem?",
+        },
+      ]);
+    } finally {
+      setIsProcessingProctor(false);
+    }
+  };
+
+  const handleProctorRecord = async () => {
+    if (isRecording) {
+      // Stop recording
+      stopRecording();
+    } else {
+      // Start recording
+      startRecording();
+    }
+  };
+
+  const startRecording = () => {
+    // Use Web Speech API for speech recognition
+    const SpeechRecognition = (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
+    
+    if (!SpeechRecognition) {
+      alert('Speech recognition is not supported in your browser. Please use Chrome or Edge.');
+      return;
+    }
+
+    const recognition = new SpeechRecognition();
+    recognition.continuous = true; // Keep recording until manually stopped
+    recognition.interimResults = false;
+    recognition.lang = 'en-US';
+
+    let transcriptParts: string[] = [];
+
+    recognition.onstart = () => {
+      setIsRecording(true);
+      audioChunksRef.current = [];
+      transcriptParts = [];
+    };
+
+    recognition.onresult = (event: any) => {
+      // Collect all transcript parts
+      for (let i = event.resultIndex; i < event.results.length; i++) {
+        if (event.results[i].isFinal) {
+          transcriptParts.push(event.results[i][0].transcript);
+        }
+      }
+    };
+
+    recognition.onerror = (event: any) => {
+      console.error('Speech recognition error:', event.error);
+      setIsRecording(false);
+      if (event.error !== 'no-speech' && event.error !== 'aborted') {
+        alert(`Speech recognition error: ${event.error}`);
+      }
+    };
+
+    recognition.onend = async () => {
+      setIsRecording(false);
+      
+      // Combine all transcript parts
+      const fullTranscript = transcriptParts.join(' ').trim();
+      
+      if (fullTranscript) {
+        // Add user message
+        const userMessage = { role: 'user' as const, content: fullTranscript };
+        setProctorMessages((prev) => [...prev, userMessage]);
+        
+        // Get AI response
+        await getProctorResponse(fullTranscript);
+      }
+    };
+
+    recognitionRef.current = recognition;
+    recognition.start();
+  };
+
+  const stopRecording = () => {
+    if (recognitionRef.current) {
+      recognitionRef.current.stop();
+      setIsRecording(false);
+    }
+  };
+
+  const getProctorResponse = async (userResponse: string) => {
+    setIsProcessingProctor(true);
+    try {
+      const response = await fetch('/api/proctor-chat', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          questionTitle: currentProblem.title,
+          questionDescription: currentProblem.description,
+          solutionOutline: currentApiQuestion?.solutionOutline || '',
+          code: code,
+          conversationHistory: proctorMessages,
+          userResponse: userResponse,
+        }),
+      });
+
+      const data = await response.json();
+      if (data.success) {
+        setProctorMessages((prev) => [...prev, { role: 'assistant', content: data.message }]);
+      }
+    } catch (error) {
+      console.error('Error getting proctor response:', error);
+      setProctorMessages((prev) => [
+        ...prev,
+        { role: 'assistant', content: 'I understand. Can you tell me more about your approach?' },
+      ]);
+    } finally {
+      setIsProcessingProctor(false);
+    }
+  };
 
   // Handle Run Code - Execute Python code against test cases
   const handleRunCode = async () => {
@@ -401,7 +523,12 @@ export default function TechnicalInterviewPage() {
   // Handle Stop Proctor Session
   const handleStopProctor = () => {
     setLiveProctorMode(false);
-    setProctorHints([]);
+    setProctorMessages([]);
+    if (recognitionRef.current) {
+      recognitionRef.current.stop();
+    }
+    setIsRecording(false);
+    setIsProcessingProctor(false);
   };
 
   // Handle Next Question
@@ -573,7 +700,13 @@ export default function TechnicalInterviewPage() {
       />
 
       {/* AI Proctor Floating Box */}
-      <ProctorHintBox hints={proctorHints} isActive={liveProctorMode} />
+      <ProctorHintBox 
+        messages={proctorMessages} 
+        isActive={liveProctorMode} 
+        onRecord={handleProctorRecord}
+        isRecording={isRecording}
+        isProcessing={isProcessingProctor}
+      />
 
       {/* AI Proctor Start Modal */}
       <ProctorModal
