@@ -177,16 +177,30 @@ export default function TechnicalInterviewPage() {
     }
   };
 
+  // Reset question state when changing questions
+  const resetQuestionState = () => {
+    setSelectedChoice(null);
+    setMcSubmitted(false);
+    setFreeResponseAnswer('');
+    setFrSubmitted(false);
+    setFrFeedback('');
+    setOutput('');
+    setFeedback('');
+    setTestResults([]);
+    setActiveTab('question');
+  };
+
   // Update code when question changes
   useEffect(() => {
-    if (currentApiQuestion?.starterCode) {
-      // Use the starter code directly (Python only)
-      const starterCode = currentApiQuestion.starterCode || '# Write your solution here\ndef solution():\n    pass';
-      setCode(starterCode);
-      setOutput('');
-      setFeedback('');
-      setTestResults([]);
-      setActiveTab('question');
+    if (currentApiQuestion) {
+      // Reset all question state when changing questions
+      resetQuestionState();
+      
+      // Set starter code for coding questions
+      if (currentApiQuestion.format === 'coding' && currentApiQuestion.starterCode) {
+        const starterCode = currentApiQuestion.starterCode || '# Write your solution here\ndef solution():\n    pass';
+        setCode(starterCode);
+      }
     }
   }, [currentQuestionIndex, currentApiQuestion]);
 
@@ -383,21 +397,7 @@ Keep up the good work! Review the test cases and iterate on your solution.`;
   const handlePreviousQuestion = () => {
     if (currentQuestionIndex > 0) {
       setCurrentQuestionIndex(currentQuestionIndex - 1);
-      resetQuestionState();
     }
-  };
-
-  // Reset question state when changing questions
-  const resetQuestionState = () => {
-    setSelectedChoice(null);
-    setMcSubmitted(false);
-    setFreeResponseAnswer('');
-    setFrSubmitted(false);
-    setFrFeedback('');
-    setOutput('');
-    setFeedback('');
-    setTestResults([]);
-    setActiveTab('question');
   };
 
   // Handle Multiple Choice submission

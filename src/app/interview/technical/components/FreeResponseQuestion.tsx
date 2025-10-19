@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Send, Sparkles } from 'lucide-react';
 
 interface FreeResponseQuestionProps {
@@ -23,6 +23,11 @@ export default function FreeResponseQuestion({
   isFetchingFeedback,
 }: FreeResponseQuestionProps) {
   const [answer, setAnswer] = useState(userAnswer);
+
+  // Reset answer when userAnswer prop changes (new question)
+  useEffect(() => {
+    setAnswer(userAnswer);
+  }, [userAnswer]);
 
   const handleSubmit = () => {
     if (answer.trim()) {
