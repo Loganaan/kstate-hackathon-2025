@@ -3,15 +3,43 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import ThemeToggle from "@/components/ThemeToggle";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useTheme } from "next-themes";
 
 export default function SideButtons() {
   const pathname = usePathname();
   const [hoveredButton, setHoveredButton] = useState<string | null>(null);
+  const [mounted, setMounted] = useState(false);
   const { theme } = useTheme();
   
   const isDark = theme === 'dark';
+  
+  // Prevent hydration mismatch by only rendering theme-dependent content after mount
+  useEffect(() => {
+    setMounted(true);
+  }, []);
+
+  // Use light mode colors during SSR to prevent hydration mismatch
+  const getThemeColors = () => {
+    if (!mounted) {
+      return {
+        background: 'linear-gradient(to bottom right, rgb(243, 244, 246), rgb(249, 250, 251))',
+        border: 'rgb(229, 231, 235)',
+        icon: 'rgb(55, 65, 81)'
+      };
+    }
+    return isDark ? {
+      background: 'linear-gradient(to bottom right, rgb(31, 41, 55), rgb(17, 24, 39))',
+      border: 'rgb(55, 65, 81)',
+      icon: 'rgb(209, 213, 219)'
+    } : {
+      background: 'linear-gradient(to bottom right, rgb(243, 244, 246), rgb(249, 250, 251))',
+      border: 'rgb(229, 231, 235)',
+      icon: 'rgb(55, 65, 81)'
+    };
+  };
+
+  const colors = getThemeColors();
   
   const isActive = (path: string) => {
     if (path === '/dashboard') return pathname === path;
@@ -169,21 +197,17 @@ export default function SideButtons() {
           className="group relative w-16 h-16 rounded-2xl flex items-center justify-center cursor-pointer"
           style={{
             background: isActive('/dashboard')
-              ? 'linear-gradient(to bottom right, rgba(76,166,38,0.25), rgba(76,166,38,0.15))'
+              ? 'linear-gradient(to bottom right, rgba(76,166,38,0.2), rgba(76,166,38,0.05))'
               : hoveredButton === 'dashboard'
               ? 'linear-gradient(to bottom right, rgba(76,166,38,0.15), rgba(76,166,38,0.05))'
-              : isDark
-              ? 'linear-gradient(to bottom right, rgb(31, 41, 55), rgb(17, 24, 39))'
-              : 'linear-gradient(to bottom right, rgb(243, 244, 246), rgb(249, 250, 251))',
+              : colors.background,
             borderWidth: '1px',
             borderStyle: 'solid',
             borderColor: isActive('/dashboard')
-              ? 'rgba(76,166,38,0.5)'
+              ? 'rgba(76,166,38,0.6)'
               : hoveredButton === 'dashboard'
               ? 'rgba(76,166,38,0.4)'
-              : isDark
-              ? 'rgb(55, 65, 81)'
-              : 'rgb(229, 231, 235)',
+              : colors.border,
             transform: hoveredButton === 'dashboard' ? 'scale(1.1) rotate(-3deg)' : 'scale(1)',
             transition: 'all 300ms ease-out',
             boxShadow: isActive('/dashboard')
@@ -204,9 +228,7 @@ export default function SideButtons() {
             style={{
               color: isActive('/dashboard') || hoveredButton === 'dashboard'
                 ? 'rgba(76,166,38,1)'
-                : isDark
-                ? 'rgb(209, 213, 219)'
-                : 'rgb(55, 65, 81)',
+                : colors.icon,
               transform: hoveredButton === 'dashboard' ? 'scale(1.1)' : 'scale(1)',
               transition: 'all 300ms ease-out'
             }}
@@ -236,18 +258,14 @@ export default function SideButtons() {
           onMouseLeave={() => setHoveredButton(null)}
           className="group relative w-16 h-16 rounded-2xl flex items-center justify-center cursor-pointer"
           style={{
-            background: hoveredButton === 'flashcards'
+            background: hoveredButton === 'technical'
               ? 'linear-gradient(to bottom right, rgba(76,166,38,0.15), rgba(76,166,38,0.05))'
-              : isDark
-              ? 'linear-gradient(to bottom right, rgb(31, 41, 55), rgb(17, 24, 39))'
-              : 'linear-gradient(to bottom right, rgb(243, 244, 246), rgb(249, 250, 251))',
+              : colors.background,
             borderWidth: '1px',
             borderStyle: 'solid',
-            borderColor: hoveredButton === 'flashcards' 
+            borderColor: hoveredButton === 'technical' 
               ? 'rgba(76,166,38,0.4)' 
-              : isDark
-              ? 'rgb(55, 65, 81)'
-              : 'rgb(229, 231, 235)',
+              : colors.border,
             transform: hoveredButton === 'flashcards' ? 'scale(1.1) rotate(-3deg)' : 'scale(1)',
             transition: 'all 300ms ease-out',
             boxShadow: hoveredButton === 'flashcards'
@@ -264,11 +282,9 @@ export default function SideButtons() {
             stroke="currentColor"
             className="w-7 h-7"
             style={{
-              color: hoveredButton === 'flashcards' 
+              color: hoveredButton === 'technical' 
                 ? 'rgba(76,166,38,1)' 
-                : isDark
-                ? 'rgb(209, 213, 219)'
-                : 'rgb(55, 65, 81)',
+                : colors.icon,
               transform: hoveredButton === 'flashcards' ? 'scale(1.1)' : 'scale(1)',
               transition: 'all 300ms ease-out'
             }}
@@ -299,18 +315,14 @@ export default function SideButtons() {
           onMouseLeave={() => setHoveredButton(null)}
           className="group relative w-16 h-16 rounded-2xl flex items-center justify-center cursor-pointer"
           style={{
-            background: hoveredButton === 'about'
+            background: hoveredButton === 'flashcards'
               ? 'linear-gradient(to bottom right, rgba(76,166,38,0.15), rgba(76,166,38,0.05))'
-              : isDark
-              ? 'linear-gradient(to bottom right, rgb(31, 41, 55), rgb(17, 24, 39))'
-              : 'linear-gradient(to bottom right, rgb(243, 244, 246), rgb(249, 250, 251))',
+              : colors.background,
             borderWidth: '1px',
             borderStyle: 'solid',
-            borderColor: hoveredButton === 'about' 
+            borderColor: hoveredButton === 'flashcards' 
               ? 'rgba(76,166,38,0.4)' 
-              : isDark
-              ? 'rgb(55, 65, 81)'
-              : 'rgb(229, 231, 235)',
+              : colors.border,
             transform: hoveredButton === 'about' ? 'scale(1.1) rotate(-3deg)' : 'scale(1)',
             transition: 'all 300ms ease-out',
             boxShadow: hoveredButton === 'about'
@@ -327,11 +339,9 @@ export default function SideButtons() {
             stroke="currentColor"
             className="w-7 h-7"
             style={{
-              color: hoveredButton === 'about' 
+              color: hoveredButton === 'flashcards' 
                 ? 'rgba(76,166,38,1)' 
-                : isDark
-                ? 'rgb(209, 213, 219)'
-                : 'rgb(55, 65, 81)',
+                : colors.icon,
               transform: hoveredButton === 'about' ? 'scale(1.1)' : 'scale(1)',
               transition: 'all 300ms ease-out'
             }}
