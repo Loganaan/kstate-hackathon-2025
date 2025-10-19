@@ -9,6 +9,8 @@ import ProctorModal from './components/ProctorModal';
 import ProctorHintBox from './components/ProctorHintBox';
 import StatusBar from './components/StatusBar';
 import InterviewSetup from './components/InterviewSetup';
+import MultipleChoiceQuestion from './components/MultipleChoiceQuestion';
+import FreeResponseQuestion from './components/FreeResponseQuestion';
 
 interface TestCase {
   input: string;
@@ -81,6 +83,16 @@ export default function TechnicalInterviewPage() {
   // Editor state - Python only
   const [language] = useState<'python'>('python');
   const [code, setCode] = useState(MOCK_PROBLEM.starterCode.python);
+
+  // Multiple choice state
+  const [selectedChoice, setSelectedChoice] = useState<string | null>(null);
+  const [mcSubmitted, setMcSubmitted] = useState(false);
+
+  // Free response state
+  const [freeResponseAnswer, setFreeResponseAnswer] = useState('');
+  const [frSubmitted, setFrSubmitted] = useState(false);
+  const [frFeedback, setFrFeedback] = useState('');
+  const [isFetchingFrFeedback, setIsFetchingFrFeedback] = useState(false);
 
   // Session state
   const [isRunning, setIsRunning] = useState(false);
@@ -371,6 +383,60 @@ Keep up the good work! Review the test cases and iterate on your solution.`;
   const handlePreviousQuestion = () => {
     if (currentQuestionIndex > 0) {
       setCurrentQuestionIndex(currentQuestionIndex - 1);
+      resetQuestionState();
+    }
+  };
+
+  // Reset question state when changing questions
+  const resetQuestionState = () => {
+    setSelectedChoice(null);
+    setMcSubmitted(false);
+    setFreeResponseAnswer('');
+    setFrSubmitted(false);
+    setFrFeedback('');
+    setOutput('');
+    setFeedback('');
+    setTestResults([]);
+    setActiveTab('question');
+  };
+
+  // Handle Multiple Choice submission
+  const handleMultipleChoiceSubmit = (choice: string) => {
+    setSelectedChoice(choice);
+    setMcSubmitted(true);
+  };
+
+  // Handle Free Response submission
+  const handleFreeResponseSubmit = async (answer: string) => {
+    setFreeResponseAnswer(answer);
+    setFrSubmitted(true);
+    setIsFetchingFrFeedback(true);
+
+    // Call Technical Feedback API
+    try {
+      const response = await fetch('/api/technical-feedback', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          question: currentApiQuestion?.prompt,
+          answer: answer,
+          solutionOutline: currentApiQuestion?.solutionOutline,
+        }),
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to get feedback');
+      }
+
+      const data = await response.json();
+      setFrFeedback(data.feedback || 'Unable to generate feedback at this time.');
+    } catch (error) {
+      console.error('Feedback error:', error);
+      setFrFeedback('Error generating feedback. Please try again.');
+    } finally {
+      setIsFetchingFrFeedback(false);
     }
   };
 
@@ -443,40 +509,98 @@ Keep up the good work! Review the test cases and iterate on your solution.`;
         </div>
       )}
 
-      {/* Main Content - 3 Panel Layout */}
+      {/* Main Content - Layout changes based on question format */}
       <div className="grid lg:grid-cols-2 gap-0" style={{ height: apiQuestions.length > 0 ? 'calc(100vh - 14rem)' : 'calc(100vh - 10rem)' }}>
-        {/* Left Panel - Problem Description with Tabs */}
-        <ProblemPanel
-          problem={currentProblem}
-          activeTab={activeTab}
-          onTabChange={setActiveTab}
-          feedback={feedback}
-          isFetchingFeedback={isFetchingFeedback}
-        />
+        {/* Coding Question - 2 panel layout */}
+        {currentApiQuestion?.format === 'coding' && (
+          <>
+            {/* Left Panel - Problem Description with Tabs */}
+            <ProblemPanel
+              problem={currentProblem}
+              activeTab={activeTab}
+              onTabChange={setActiveTab}
+              feedback={feedback}
+              isFetchingFeedback={isFetchingFeedback}
+            />
 
-        {/* Right Panel - Code Editor (top) & Console (bottom) */}
-        <div className="flex flex-col bg-gray-50 dark:bg-gray-950 overflow-hidden">
-          {/* Code Editor Section */}
-          <CodeEditor
-            code={code}
-            onCodeChange={setCode}
-            onRunCode={handleRunCode}
-            onRequestFeedback={handleRequestFeedback}
-            onReset={handleReset}
-            isRunning={isRunning}
-            isFetchingFeedback={isFetchingFeedback}
-          />
+            {/* Right Panel - Code Editor (top) & Console (bottom) */}
+            <div className="flex flex-col bg-gray-50 dark:bg-gray-950 overflow-hidden">
+              {/* Code Editor Section */}
+              <CodeEditor
+                code={code}
+                onCodeChange={setCode}
+                onRunCode={handleRunCode}
+                onRequestFeedback={handleRequestFeedback}
+                onReset={handleReset}
+                isRunning={isRunning}
+                isFetchingFeedback={isFetchingFeedback}
+              />
 
-          {/* Console / Test Results Section */}
-          <ConsoleOutput testResults={testResults} output={output} />
-        </div>
+              {/* Console / Test Results Section */}
+              <ConsoleOutput testResults={testResults} output={output} />
+            </div>
+          </>
+        )}
+
+        {/* Multiple Choice Question - Full width */}
+        {currentApiQuestion?.format === 'multiple-choice' && (
+          <div className="col-span-2">
+            <MultipleChoiceQuestion
+              prompt={currentApiQuestion.prompt}
+              choices={currentApiQuestion.choices || []}
+              onSubmit={handleMultipleChoiceSubmit}
+              isSubmitted={mcSubmitted}
+              selectedAnswer={selectedChoice}
+            />
+          </div>
+        )}
+
+        {/* Free Response Question - Full width */}
+        {currentApiQuestion?.format === 'free-response' && (
+          <div className="col-span-2">
+            <FreeResponseQuestion
+              prompt={currentApiQuestion.prompt}
+              solutionOutline={currentApiQuestion.solutionOutline}
+              onSubmit={handleFreeResponseSubmit}
+              isSubmitted={frSubmitted}
+              userAnswer={freeResponseAnswer}
+              feedback={frFeedback}
+              isFetchingFeedback={isFetchingFrFeedback}
+            />
+          </div>
+        )}
+
+        {/* Fallback for no API questions - show mock problem */}
+        {!currentApiQuestion && (
+          <>
+            <ProblemPanel
+              problem={currentProblem}
+              activeTab={activeTab}
+              onTabChange={setActiveTab}
+              feedback={feedback}
+              isFetchingFeedback={isFetchingFeedback}
+            />
+            <div className="flex flex-col bg-gray-50 dark:bg-gray-950 overflow-hidden">
+              <CodeEditor
+                code={code}
+                onCodeChange={setCode}
+                onRunCode={handleRunCode}
+                onRequestFeedback={handleRequestFeedback}
+                onReset={handleReset}
+                isRunning={isRunning}
+                isFetchingFeedback={isFetchingFeedback}
+              />
+              <ConsoleOutput testResults={testResults} output={output} />
+            </div>
+          </>
+        )}
       </div>
 
       {/* Bottom Status Bar */}
       <StatusBar
-        language={language}
-        testsPassed={testResults.filter((t) => t.passed).length}
-        totalTests={currentApiQuestion?.testCases?.length || testResults.length || 5}
+        language={currentApiQuestion?.format === 'coding' ? language : undefined}
+        testsPassed={currentApiQuestion?.format === 'coding' ? testResults.filter((t) => t.passed).length : undefined}
+        totalTests={currentApiQuestion?.format === 'coding' ? (currentApiQuestion?.testCases?.length || testResults.length || 5) : undefined}
         liveProctorMode={liveProctorMode}
       />
     </div>
