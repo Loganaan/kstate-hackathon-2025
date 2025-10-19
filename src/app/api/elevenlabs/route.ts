@@ -43,6 +43,7 @@ export async function POST(request: NextRequest) {
         voice_settings: {
           stability: 0.5,
           similarity_boost: 0.75,
+          speed: 1.2, // Speaking speed (0.25 to 4.0, default is 1.0)
         },
       }),
     });
