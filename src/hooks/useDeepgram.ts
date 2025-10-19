@@ -4,15 +4,37 @@ import { createClient, LiveTranscriptionEvents, LiveClient } from '@deepgram/sdk
 interface UseDeepgramOptions {
   onTranscript?: (transcript: string) => void;
   onError?: (error: Error) => void;
+  onFillerWord?: (word: string) => void;
 }
 
-export function useDeepgram({ onTranscript, onError }: UseDeepgramOptions = {}) {
+// Common filler words to detect
+const FILLER_WORDS = [
+  'um', 'uh', 'umm', 'uhh', 'err', 'ah',
+  'like', 'you know', 'actually', 'basically',
+  'literally', 'kind of', 'sort of', 'i mean'
+];
+
+export function useDeepgram({ onTranscript, onError, onFillerWord }: UseDeepgramOptions = {}) {
   const [isRecording, setIsRecording] = useState(false);
   const [isConnected, setIsConnected] = useState(false);
   
   const deepgramRef = useRef<LiveClient | null>(null);
   const mediaRecorderRef = useRef<MediaRecorder | null>(null);
   const streamRef = useRef<MediaStream | null>(null);
+
+  // Function to detect filler words in transcript
+  const detectFillerWords = useCallback((text: string) => {
+    const lowerText = text.toLowerCase().trim();
+    
+    for (const filler of FILLER_WORDS) {
+      // Check if the text contains the filler word as a separate word
+      const regex = new RegExp(`\\b${filler}\\b`, 'i');
+      if (regex.test(lowerText)) {
+        onFillerWord?.(filler);
+        break; // Only trigger once per transcript segment
+      }
+    }
+  }, [onFillerWord]);
 
   const startRecording = useCallback(async () => {
     try {
@@ -45,6 +67,7 @@ export function useDeepgram({ onTranscript, onError }: UseDeepgramOptions = {}) 
         interim_results: true,
         utterance_end_ms: 1000,
         punctuate: true,
+        filler_words: true, // Enable filler word detection
       });
 
       deepgramRef.current = connection;
@@ -75,6 +98,11 @@ export function useDeepgram({ onTranscript, onError }: UseDeepgramOptions = {}) 
         
         if (transcript && data.is_final) {
           console.log('Final transcript:', transcript);
+          
+          // Detect filler words
+          detectFillerWords(transcript);
+          
+          // Call the transcript callback
           onTranscript?.(transcript);
         }
       });
@@ -95,7 +123,7 @@ export function useDeepgram({ onTranscript, onError }: UseDeepgramOptions = {}) 
       onError?.(error instanceof Error ? error : new Error('Failed to start recording'));
       stopRecording();
     }
-  }, [onTranscript, onError]);
+  }, [onTranscript, onError, onFillerWord, detectFillerWords]);
 
   const stopRecording = useCallback(() => {
     // Stop media recorder

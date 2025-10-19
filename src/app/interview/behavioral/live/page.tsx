@@ -2,9 +2,10 @@
 
 import { useRouter, useSearchParams } from 'next/navigation';
 import { useState, useEffect, useRef, Suspense } from 'react';
-import { Mic, MicOff, Volume2, VolumeX, X } from 'lucide-react';
+import { Mic, MicOff, Volume2, VolumeX, X, AlertCircle } from 'lucide-react';
 import Button from '@/components/Button';
 import { useDeepgram } from '@/hooks/useDeepgram';
+import FillerWordPopup from '@/components/FillerWordPopup';
 
 interface Message {
   id: string;
@@ -29,6 +30,8 @@ function LiveInterviewSessionContent() {
   const [interviewStarted, setInterviewStarted] = useState(false);
   const [currentQuestion, setCurrentQuestion] = useState('');
   const [transcript, setTranscript] = useState('');
+  const [fillerWordDetected, setFillerWordDetected] = useState<string | null>(null);
+  const [fillerWordCount, setFillerWordCount] = useState(0);
   
   const audioRef = useRef<HTMLAudioElement | null>(null);
 
@@ -39,6 +42,11 @@ function LiveInterviewSessionContent() {
     },
     onError: (error) => {
       console.error('Deepgram error:', error);
+    },
+    onFillerWord: (word) => {
+      console.log('Filler word detected:', word);
+      setFillerWordDetected(word);
+      setFillerWordCount(prev => prev + 1);
     },
   });
 
@@ -231,11 +239,19 @@ function LiveInterviewSessionContent() {
 
   return (
     <div className="min-h-screen bg-gray-50 dark:bg-gray-950 flex items-center justify-center p-4 pl-20">
+      {/* Filler Word Popup */}
+      {fillerWordDetected && (
+        <FillerWordPopup
+          word={fillerWordDetected}
+          onClose={() => setFillerWordDetected(null)}
+        />
+      )}
+      
       <div className="max-w-4xl w-full bg-white dark:bg-gray-900 rounded-2xl shadow-2xl overflow-hidden">
         {/* Header */}
         <div className="bg-gradient-to-r from-[rgba(76,166,38,1)] to-[rgba(76,166,38,0.8)] p-6 text-white">
           <div className="flex justify-between items-center">
-            <div>
+            <div className="flex-1">
               <h1 className="text-2xl font-bold">Live Practice Interview</h1>
               <p className="text-sm text-white/80 mt-1">
                 Behavioral Interview Session
@@ -244,6 +260,18 @@ function LiveInterviewSessionContent() {
                 )}
               </p>
             </div>
+            
+            {/* Filler Word Counter */}
+            {interviewStarted && (
+              <div className="flex items-center gap-2 bg-white/20 px-4 py-2 rounded-lg mr-4">
+                <AlertCircle className="w-5 h-5" />
+                <div className="text-center">
+                  <p className="text-xs opacity-80">Filler Words</p>
+                  <p className="text-lg font-bold">{fillerWordCount}</p>
+                </div>
+              </div>
+            )}
+            
             <button
               onClick={endInterview}
               className="p-2 hover:bg-white/20 rounded-lg transition-all duration-200 cursor-pointer hover:scale-110"

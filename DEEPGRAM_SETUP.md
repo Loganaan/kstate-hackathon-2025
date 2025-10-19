@@ -99,6 +99,20 @@ The hook uses the `nova-2` model by default, but you can modify it in `useDeepgr
 - `enhanced` - Good for general purpose
 - `base` - Faster but less accurate
 
+## Deepgram Features Enabled
+
+The following Deepgram parameters are enabled in our configuration:
+
+- `model: 'nova-2'` - Uses the latest model
+- `language: 'en-US'` - English (US) language
+- `smart_format: true` - Automatic formatting
+- `interim_results: true` - Real-time partial results
+- `utterance_end_ms: 1000` - Detects end of utterances
+- `punctuate: true` - Adds punctuation
+- `filler_words: true` - **Includes filler words (uh, um, mhmm, uh-uh, uh-huh, nuh-uh) in transcripts**
+
+The `filler_words` parameter is particularly useful for interview practice as it allows the application to detect and provide feedback on filler word usage.
+
 ## Troubleshooting
 
 ### "Deepgram API key not configured"
