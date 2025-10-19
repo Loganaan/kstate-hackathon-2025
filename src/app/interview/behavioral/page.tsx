@@ -9,6 +9,8 @@ import SessionCard from './components/SessionCard';
 import LivePracticeModal from './components/LivePracticeModal';
 import NewSessionModal, { SessionParams } from './components/NewSessionModal';
 import ChatInput from './components/ChatInput';
+import { firebaseUtils } from '@/lib/firebase';
+import { Timestamp } from 'firebase/firestore';
 
 interface Message {
   id: string;
@@ -19,6 +21,7 @@ interface Message {
 
 interface ChatSession {
   id: string;
+  firebaseId?: string; // Firebase document ID
   title: string;
   lastMessage: string;
   timestamp: Date;
@@ -36,6 +39,38 @@ export default function BehavioralInterviewPage() {
   const [showNewSessionModal, setShowNewSessionModal] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
+
+  // Load sessions from Firebase on mount
+  useEffect(() => {
+    const loadSessions = async () => {
+      try {
+        const firebaseSessions = await firebaseUtils.getChatSessions(undefined, 'behavioral');
+        const convertedSessions: ChatSession[] = firebaseSessions.map(session => ({
+          id: session.id,
+          firebaseId: session.id,
+          title: session.title,
+          lastMessage: session.lastMessage,
+          timestamp: session.timestamp.toDate(),
+          messageCount: session.messageCount,
+          messages: session.messages.map(msg => ({
+            ...msg,
+            timestamp: msg.timestamp.toDate()
+          })),
+          params: session.params ? {
+            company: session.params.company || '',
+            role: session.params.role || '',
+            seniority: session.params.seniority || '',
+            jobDescription: session.params.jobDescription || ''
+          } : undefined
+        }));
+        setSessions(convertedSessions);
+      } catch (error) {
+        console.error('Error loading sessions from Firebase:', error);
+      }
+    };
+
+    loadSessions();
+  }, []);
 
   // Auto-scroll to bottom when messages change
   useEffect(() => {
@@ -193,6 +228,37 @@ export default function BehavioralInterviewPage() {
         timestamp: new Date(),
       };
 
+      // Save both user and assistant messages to Firebase
+      if (currentSession?.firebaseId) {
+        try {
+          // Add user message
+          await firebaseUtils.addMessageToSession(
+            currentSession.firebaseId,
+            {
+              id: newUserMessage.id,
+              role: newUserMessage.role,
+              content: newUserMessage.content,
+              timestamp: Timestamp.fromDate(newUserMessage.timestamp)
+            },
+            newUserMessage.content
+          );
+
+          // Add assistant message
+          await firebaseUtils.addMessageToSession(
+            currentSession.firebaseId,
+            {
+              id: assistantMessage.id,
+              role: assistantMessage.role,
+              content: assistantMessage.content,
+              timestamp: Timestamp.fromDate(assistantMessage.timestamp)
+            },
+            assistantMessage.content
+          );
+        } catch (error) {
+          console.error('Error saving messages to Firebase:', error);
+        }
+      }
+
       // Update session with assistant message
       setSessions(prevSessions => 
         prevSessions.map(session => 
@@ -237,32 +303,57 @@ export default function BehavioralInterviewPage() {
   const createNewSession = async (params?: SessionParams) => {
     setIsLoading(true);
     
-    // Generate first question with parameters
-    const firstQuestion = await generateFirstQuestion(params);
-    
-    // Create a title based on the parameters
-    let title = `Session ${sessions.length + 1}`;
-    if (params?.role && params?.company) {
-      title = `${params.role} at ${params.company}`;
-    } else if (params?.role) {
-      title = params.role;
-    } else if (params?.company) {
-      title = params.company;
+    try {
+      // Generate first question with parameters
+      const firstQuestion = await generateFirstQuestion(params);
+      
+      // Create a title based on the parameters
+      let title = `Session ${sessions.length + 1}`;
+      if (params?.role && params?.company) {
+        title = `${params.role} at ${params.company}`;
+      } else if (params?.role) {
+        title = params.role;
+      } else if (params?.company) {
+        title = params.company;
+      }
+      
+      const timestamp = new Date();
+      const localId = Date.now().toString();
+      
+      // Save to Firebase
+      const firebaseId = await firebaseUtils.saveChatSession({
+        title,
+        lastMessage: firstQuestion.content,
+        timestamp: Timestamp.fromDate(timestamp),
+        messageCount: 1,
+        messages: [{
+          id: firstQuestion.id,
+          role: firstQuestion.role,
+          content: firstQuestion.content,
+          timestamp: Timestamp.fromDate(firstQuestion.timestamp)
+        }],
+        params,
+        type: 'behavioral'
+      });
+      
+      const newSession: ChatSession = {
+        id: localId,
+        firebaseId,
+        title,
+        lastMessage: firstQuestion.content,
+        timestamp,
+        messageCount: 1,
+        messages: [firstQuestion],
+        params
+      };
+      
+      setSessions(prevSessions => [newSession, ...prevSessions]);
+      setActiveSessionId(newSession.id);
+    } catch (error) {
+      console.error('Error creating new session:', error);
+    } finally {
+      setIsLoading(false);
     }
-    
-    const newSession: ChatSession = {
-      id: Date.now().toString(),
-      title,
-      lastMessage: firstQuestion.content,
-      timestamp: new Date(),
-      messageCount: 1,
-      messages: [firstQuestion],
-      params
-    };
-    
-    setSessions(prevSessions => [newSession, ...prevSessions]);
-    setActiveSessionId(newSession.id);
-    setIsLoading(false);
   };
 
   const deleteSession = (sessionId: string) => {
