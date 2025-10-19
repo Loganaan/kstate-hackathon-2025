@@ -149,10 +149,10 @@ export default function FullInterviewModal({ isOpen, onClose, onStart }: FullInt
               <button
                 type="button"
                 onClick={() => setInputMode('manual')}
-                className={`flex-1 px-4 py-3 rounded-lg border-2 font-medium transition-all ${
+                className={`flex-1 px-4 py-3 rounded-lg border-2 font-medium transition-all duration-200 ${
                   inputMode === 'manual'
-                    ? 'border-blue-600 bg-blue-50 dark:bg-blue-900/20 text-blue-700 dark:text-blue-300'
-                    : 'border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 hover:border-gray-400'
+                    ? 'border-[rgba(76,166,38,1)] bg-[rgba(76,166,38,0.1)] dark:bg-[rgba(76,166,38,0.2)] text-[rgba(76,166,38,1)] shadow-[0_0_8px_rgba(76,166,38,0.3)]'
+                    : 'border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 hover:border-[rgba(76,166,38,0.5)] hover:bg-[rgba(76,166,38,0.05)]'
                 }`}
               >
                 Manual Input
@@ -160,10 +160,10 @@ export default function FullInterviewModal({ isOpen, onClose, onStart }: FullInt
               <button
                 type="button"
                 onClick={() => setInputMode('url')}
-                className={`flex-1 px-4 py-3 rounded-lg border-2 font-medium transition-all ${
+                className={`flex-1 px-4 py-3 rounded-lg border-2 font-medium transition-all duration-200 ${
                   inputMode === 'url'
-                    ? 'border-blue-600 bg-blue-50 dark:bg-blue-900/20 text-blue-700 dark:text-blue-300'
-                    : 'border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 hover:border-gray-400'
+                    ? 'border-[rgba(76,166,38,1)] bg-[rgba(76,166,38,0.1)] dark:bg-[rgba(76,166,38,0.2)] text-[rgba(76,166,38,1)] shadow-[0_0_8px_rgba(76,166,38,0.3)]'
+                    : 'border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 hover:border-[rgba(76,166,38,0.5)] hover:bg-[rgba(76,166,38,0.05)]'
                 }`}
               >
                 Job Posting URL
@@ -314,14 +314,14 @@ export default function FullInterviewModal({ isOpen, onClose, onStart }: FullInt
               type="button"
               onClick={handleClose}
               disabled={isLoading}
-              className="flex-1 px-6 py-3 rounded-lg border-2 border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 font-semibold hover:bg-gray-50 dark:hover:bg-gray-700 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+              className="flex-1 px-6 py-3 rounded-lg border-2 border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 font-semibold hover:bg-gray-50 dark:hover:bg-gray-700 transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
             >
               Cancel
             </button>
             <button
               type="submit"
               disabled={isLoading}
-              className="flex-1 px-6 py-3 rounded-lg bg-gradient-to-r from-blue-600 to-purple-600 text-white font-semibold hover:from-blue-700 hover:to-purple-700 transition-all disabled:opacity-50 disabled:cursor-not-allowed shadow-lg hover:shadow-xl"
+              className="flex-1 px-6 py-3 rounded-lg bg-gradient-to-r from-[rgba(76,166,38,1)] to-[rgba(76,166,38,0.8)] text-white font-semibold hover:from-[rgba(76,166,38,0.9)] hover:to-[rgba(76,166,38,0.7)] hover:scale-105 transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100 shadow-lg hover:shadow-xl"
             >
               {isLoading ? (
                 <span className="flex items-center justify-center gap-2">
