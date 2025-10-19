@@ -432,9 +432,6 @@ function BehavioralInterviewContent() {
                 <h1 className="text-xl font-semibold text-gray-900 dark:text-gray-100">
                   Behavioral Interview Coach
                 </h1>
-                <p className="text-sm text-gray-600 dark:text-gray-400 mt-1">
-                  Practice with AI-powered interview questions and feedback
-                </p>
               </div>
               {currentSession && messages.length > 0 && (
                 <div className="text-right">
