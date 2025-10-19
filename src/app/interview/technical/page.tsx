@@ -277,15 +277,19 @@ export default function TechnicalInterviewPage() {
       const data = await response.json();
       if (data.success) {
         setProctorMessages([{ role: 'assistant', content: data.message }]);
+        // Play the initial greeting out loud
+        await playTextToSpeech(data.message);
       }
     } catch (error) {
       console.error('Error starting proctor:', error);
+      const fallbackMessage = "Hi! I'm your AI Proctor. Can you walk me through how you'd approach this problem?";
       setProctorMessages([
         {
           role: 'assistant',
-          content: "Hi! I'm your AI Proctor. Can you walk me through how you'd approach this problem?",
+          content: fallbackMessage,
         },
       ]);
+      await playTextToSpeech(fallbackMessage);
     } finally {
       setIsProcessingProctor(false);
     }
@@ -386,15 +390,49 @@ export default function TechnicalInterviewPage() {
       const data = await response.json();
       if (data.success) {
         setProctorMessages((prev) => [...prev, { role: 'assistant', content: data.message }]);
+        
+        // Play the AI response out loud using text-to-speech
+        await playTextToSpeech(data.message);
       }
     } catch (error) {
       console.error('Error getting proctor response:', error);
+      const fallbackMessage = 'I understand. Can you tell me more about your approach?';
       setProctorMessages((prev) => [
         ...prev,
-        { role: 'assistant', content: 'I understand. Can you tell me more about your approach?' },
+        { role: 'assistant', content: fallbackMessage },
       ]);
+      await playTextToSpeech(fallbackMessage);
     } finally {
       setIsProcessingProctor(false);
+    }
+  };
+
+  const playTextToSpeech = async (text: string) => {
+    try {
+      const response = await fetch('/api/text-to-speech', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ text }),
+      });
+
+      if (!response.ok) {
+        console.error('Text-to-speech failed:', response.status);
+        return;
+      }
+
+      const audioBlob = await response.blob();
+      const audioUrl = URL.createObjectURL(audioBlob);
+      const audio = new Audio(audioUrl);
+      
+      audio.play();
+      
+      // Clean up the URL after playing
+      audio.onended = () => {
+        URL.revokeObjectURL(audioUrl);
+      };
+    } catch (error) {
+      console.error('Error playing text-to-speech:', error);
+      // Silently fail - conversation continues without audio
     }
   };
 
