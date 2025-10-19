@@ -4,6 +4,7 @@ import { useRouter, useSearchParams } from 'next/navigation';
 import { useState, useEffect, useRef, Suspense } from 'react';
 import { Mic, MicOff, Volume2, VolumeX, X } from 'lucide-react';
 import Button from '@/components/Button';
+import { useDeepgram } from '@/hooks/useDeepgram';
 
 interface Message {
   id: string;
@@ -23,16 +24,23 @@ function LiveInterviewSessionContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const [messages, setMessages] = useState<Message[]>([]);
-  const [isRecording, setIsRecording] = useState(false);
   const [isMuted, setIsMuted] = useState(false);
   const [isProcessing, setIsProcessing] = useState(false);
   const [interviewStarted, setInterviewStarted] = useState(false);
   const [currentQuestion, setCurrentQuestion] = useState('');
   const [transcript, setTranscript] = useState('');
   
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const recognitionRef = useRef<any>(null);
   const audioRef = useRef<HTMLAudioElement | null>(null);
+
+  // Deepgram hook for speech recognition
+  const { startRecording, stopRecording, isRecording } = useDeepgram({
+    onTranscript: (text) => {
+      setTranscript(prev => prev + ' ' + text);
+    },
+    onError: (error) => {
+      console.error('Deepgram error:', error);
+    },
+  });
 
   // Get session params from URL
   const sessionParams: SessionParams = {
@@ -41,48 +49,6 @@ function LiveInterviewSessionContent() {
     seniority: searchParams.get('seniority') || undefined,
     jobDescription: searchParams.get('jobDescription') || undefined,
   };
-
-  // Initialize speech recognition
-  useEffect(() => {
-    if (typeof window !== 'undefined' && 'webkitSpeechRecognition' in window) {
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      const SpeechRecognition = (window as any).webkitSpeechRecognition;
-      const recognition = new SpeechRecognition();
-      
-      recognition.continuous = true;
-      recognition.interimResults = true;
-      recognition.lang = 'en-US';
-
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      recognition.onresult = (event: any) => {
-        let finalTranscript = '';
-
-        for (let i = event.resultIndex; i < event.results.length; i++) {
-          const transcript = event.results[i][0].transcript;
-          if (event.results[i].isFinal) {
-            finalTranscript += transcript + ' ';
-          }
-        }
-
-        if (finalTranscript) {
-          setTranscript(prev => prev + finalTranscript);
-        }
-      };
-
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      recognition.onerror = (event: any) => {
-        console.error('Speech recognition error:', event.error);
-      };
-
-      recognitionRef.current = recognition;
-    }
-
-    return () => {
-      if (recognitionRef.current) {
-        recognitionRef.current.stop();
-      }
-    };
-  }, []);
 
   // Start the interview
   const startInterview = async () => {
@@ -175,22 +141,16 @@ function LiveInterviewSessionContent() {
 
   // Start listening to user
   const startListening = () => {
-    if (recognitionRef.current && !isRecording) {
-      setTranscript('');
-      recognitionRef.current.start();
-      setIsRecording(true);
-    }
+    setTranscript('');
+    startRecording();
   };
 
   // Stop listening and process response
   const stopListening = async () => {
-    if (recognitionRef.current && isRecording) {
-      recognitionRef.current.stop();
-      setIsRecording(false);
+    stopRecording();
 
-      if (transcript.trim()) {
-        await processUserResponse(transcript.trim());
-      }
+    if (transcript.trim()) {
+      await processUserResponse(transcript.trim());
     }
   };
 
@@ -253,9 +213,7 @@ function LiveInterviewSessionContent() {
 
   // End interview
   const endInterview = () => {
-    if (recognitionRef.current) {
-      recognitionRef.current.stop();
-    }
+    stopRecording();
     if (audioRef.current) {
       audioRef.current.pause();
     }
