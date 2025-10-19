@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect, useRef } from 'react';
+import { useRouter } from 'next/navigation';
 import { Plus, Video } from 'lucide-react';
 import Button from '@/components/Button';
 import ChatMessage from './components/ChatMessage';
@@ -27,6 +28,7 @@ interface ChatSession {
 }
 
 export default function BehavioralInterviewPage() {
+  const router = useRouter();
   const [sessions, setSessions] = useState<ChatSession[]>([]);
   const [activeSessionId, setActiveSessionId] = useState<string>('');
   const [inputMessage, setInputMessage] = useState('');
@@ -271,7 +273,8 @@ export default function BehavioralInterviewPage() {
   };
 
   return (
-    <div className="bg-gray-50 dark:bg-gray-950 min-h-[calc(100vh-8rem)] pl-20">
+    <div className="bg-gray-50 dark:bg-gray-950 min-h-[calc(100vh-8rem)]">
+      <div className="pl-24 bg-gray-50 dark:bg-gray-950">
       <div className="flex h-[calc(100vh-8rem)]">
         
         {/* Left Sidebar - Sessions List */}
@@ -402,15 +405,23 @@ export default function BehavioralInterviewPage() {
           />
         </div>
       </div>
+      </div>
 
       {/* Live Practice Modal */}
       <LivePracticeModal
         isOpen={showLiveModal}
         onClose={() => setShowLiveModal(false)}
         onStart={() => {
-          // TODO: Navigate to live practice session
           setShowLiveModal(false);
-          alert('Starting live practice session...');
+          // Navigate to live practice session with current session params
+          const params = new URLSearchParams();
+          if (currentSession?.params) {
+            if (currentSession.params.company) params.append('company', currentSession.params.company);
+            if (currentSession.params.role) params.append('role', currentSession.params.role);
+            if (currentSession.params.seniority) params.append('seniority', currentSession.params.seniority);
+            if (currentSession.params.jobDescription) params.append('jobDescription', currentSession.params.jobDescription);
+          }
+          router.push(`/interview/behavioral/live?${params.toString()}`);
         }}
       />
 

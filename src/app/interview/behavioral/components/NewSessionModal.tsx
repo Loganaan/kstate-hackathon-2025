@@ -24,11 +24,7 @@ export default function NewSessionModal({ isOpen, onClose, onStart }: NewSession
   const [jobDescription, setJobDescription] = useState('');
 
   const handleStart = () => {
-    // Only require at least one field to be filled
-    if (!company && !role && !seniority && !jobDescription) {
-      return;
-    }
-
+    // All fields are optional, so we can start even with empty values
     onStart({
       company,
       role,
@@ -55,7 +51,7 @@ export default function NewSessionModal({ isOpen, onClose, onStart }: NewSession
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 pl-20">
+    <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 pl-24">
       <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-2xl max-w-2xl w-full mx-4 overflow-hidden">
         {/* Modal Header */}
         <div className="p-6 border-b border-gray-200 dark:border-gray-700 flex items-center justify-between">

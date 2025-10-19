@@ -550,7 +550,8 @@ export default function TechnicalInterviewPage() {
   }
 
   return (
-    <div className="bg-gray-50 dark:bg-gray-950 min-h-screen pl-20">
+    <div className="bg-gray-50 dark:bg-gray-950 min-h-screen">
+      <div className="pl-24 bg-gray-50 dark:bg-gray-950">
       {/* Header */}
       <SessionHeader
         title={currentProblem.title}
@@ -709,6 +710,7 @@ export default function TechnicalInterviewPage() {
         totalTests={currentApiQuestion?.format === 'coding' ? (currentApiQuestion?.testCases?.length || testResults.length || 5) : undefined}
         liveProctorMode={liveProctorMode}
       />
+      </div>
     </div>
   );
 }
