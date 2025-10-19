@@ -10,9 +10,7 @@ export default function SideButtons() {
   const pathname = usePathname();
   const [hoveredButton, setHoveredButton] = useState<string | null>(null);
   const [mounted, setMounted] = useState(false);
-  const { theme } = useTheme();
-  
-  const isDark = theme === 'dark';
+  const { theme, resolvedTheme } = useTheme();
   
   // Prevent hydration mismatch by only rendering theme-dependent content after mount
   useEffect(() => {
@@ -28,6 +26,7 @@ export default function SideButtons() {
         icon: 'rgb(55, 65, 81)'
       };
     }
+    const isDark = resolvedTheme === 'dark';
     return isDark ? {
       background: 'linear-gradient(to bottom right, rgb(31, 41, 55), rgb(17, 24, 39))',
       border: 'rgb(55, 65, 81)',
@@ -40,6 +39,9 @@ export default function SideButtons() {
   };
 
   const colors = getThemeColors();
+  
+  // Safe theme check that works after hydration
+  const isDarkMode = () => mounted && resolvedTheme === 'dark';
   
   const isActive = (path: string) => {
     if (path === '/dashboard') return pathname === path;
@@ -62,7 +64,7 @@ export default function SideButtons() {
               ? 'linear-gradient(to bottom right, rgba(76,166,38,0.25), rgba(76,166,38,0.15))'
               : hoveredButton === 'behavioral'
               ? 'linear-gradient(to bottom right, rgba(76,166,38,0.15), rgba(76,166,38,0.05))'
-              : isDark
+              : isDarkMode()
               ? 'linear-gradient(to bottom right, rgb(31, 41, 55), rgb(17, 24, 39))'
               : 'linear-gradient(to bottom right, rgb(243, 244, 246), rgb(249, 250, 251))',
             borderWidth: '1px',
@@ -71,7 +73,7 @@ export default function SideButtons() {
               ? 'rgba(76,166,38,0.5)'
               : hoveredButton === 'behavioral'
               ? 'rgba(76,166,38,0.4)'
-              : isDark
+              : isDarkMode()
               ? 'rgb(55, 65, 81)'
               : 'rgb(229, 231, 235)',
             transform: hoveredButton === 'behavioral' ? 'scale(1.1) rotate(-3deg)' : 'scale(1)',
@@ -94,7 +96,7 @@ export default function SideButtons() {
             style={{
               color: isActive('/interview/behavioral') || hoveredButton === 'behavioral'
                 ? 'rgba(76,166,38,1)'
-                : isDark
+                : isDarkMode()
                 ? 'rgb(209, 213, 219)'
                 : 'rgb(55, 65, 81)',
               transform: hoveredButton === 'behavioral' ? 'scale(1.1)' : 'scale(1)',
@@ -131,7 +133,7 @@ export default function SideButtons() {
               ? 'linear-gradient(to bottom right, rgba(76,166,38,0.25), rgba(76,166,38,0.15))'
               : hoveredButton === 'technical'
               ? 'linear-gradient(to bottom right, rgba(76,166,38,0.15), rgba(76,166,38,0.05))'
-              : isDark
+              : isDarkMode()
               ? 'linear-gradient(to bottom right, rgb(31, 41, 55), rgb(17, 24, 39))'
               : 'linear-gradient(to bottom right, rgb(243, 244, 246), rgb(249, 250, 251))',
             borderWidth: '1px',
@@ -140,7 +142,7 @@ export default function SideButtons() {
               ? 'rgba(76,166,38,0.5)'
               : hoveredButton === 'technical'
               ? 'rgba(76,166,38,0.4)'
-              : isDark
+              : isDarkMode()
               ? 'rgb(55, 65, 81)'
               : 'rgb(229, 231, 235)',
             transform: hoveredButton === 'technical' ? 'scale(1.1) rotate(-3deg)' : 'scale(1)',
@@ -163,7 +165,7 @@ export default function SideButtons() {
             style={{
               color: isActive('/interview/technical') || hoveredButton === 'technical'
                 ? 'rgba(76,166,38,1)'
-                : isDark
+                : isDarkMode()
                 ? 'rgb(209, 213, 219)'
                 : 'rgb(55, 65, 81)',
               transform: hoveredButton === 'technical' ? 'scale(1.1)' : 'scale(1)',
@@ -258,12 +260,12 @@ export default function SideButtons() {
           onMouseLeave={() => setHoveredButton(null)}
           className="group relative w-16 h-16 rounded-2xl flex items-center justify-center cursor-pointer"
           style={{
-            background: hoveredButton === 'technical'
+            background: hoveredButton === 'flashcards'
               ? 'linear-gradient(to bottom right, rgba(76,166,38,0.15), rgba(76,166,38,0.05))'
               : colors.background,
             borderWidth: '1px',
             borderStyle: 'solid',
-            borderColor: hoveredButton === 'technical' 
+            borderColor: hoveredButton === 'flashcards' 
               ? 'rgba(76,166,38,0.4)' 
               : colors.border,
             transform: hoveredButton === 'flashcards' ? 'scale(1.1) rotate(-3deg)' : 'scale(1)',
@@ -282,7 +284,7 @@ export default function SideButtons() {
             stroke="currentColor"
             className="w-7 h-7"
             style={{
-              color: hoveredButton === 'technical' 
+              color: hoveredButton === 'flashcards' 
                 ? 'rgba(76,166,38,1)' 
                 : colors.icon,
               transform: hoveredButton === 'flashcards' ? 'scale(1.1)' : 'scale(1)',
