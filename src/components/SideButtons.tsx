@@ -293,7 +293,8 @@ export default function SideButtons() {
         </button>
 
         {/* About Button */}
-        <button
+        <Link
+          href="/about"
           onMouseEnter={() => setHoveredButton('about')}
           onMouseLeave={() => setHoveredButton(null)}
           className="group relative w-16 h-16 rounded-2xl flex items-center justify-center cursor-pointer"
@@ -352,7 +353,7 @@ export default function SideButtons() {
           >
             About
           </span>
-        </button>
+        </Link>
       </nav>
 
       {/* Theme Toggle at Bottom */}
