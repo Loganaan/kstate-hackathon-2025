@@ -2,8 +2,9 @@
 
 import { useRouter, useSearchParams } from 'next/navigation';
 import { useState, useEffect, useRef, Suspense } from 'react';
-import { Mic, MicOff, Volume2, VolumeX, X } from 'lucide-react';
+import { Mic, MicOff, Volume2, VolumeX, X, AlertCircle, Bell, BellOff } from 'lucide-react';
 import Button from '@/components/Button';
+import { useDeepgram } from '@/hooks/useDeepgram';
 
 interface Message {
   id: string;
@@ -23,21 +24,32 @@ function LiveInterviewSessionContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const [messages, setMessages] = useState<Message[]>([]);
-  const [isRecording, setIsRecording] = useState(false);
   const [isMuted, setIsMuted] = useState(false);
   const [isProcessing, setIsProcessing] = useState(false);
   const [interviewStarted, setInterviewStarted] = useState(false);
   const [currentQuestion, setCurrentQuestion] = useState('');
   const [transcript, setTranscript] = useState('');
-  const [interviewComplete, setInterviewComplete] = useState(false);
-  const [totalQuestions] = useState(4); // Behavioral interview has 4 questions
+  const [fillerWordCount, setFillerWordCount] = useState(0);
+  const [fillerWordDetectionEnabled, setFillerWordDetectionEnabled] = useState(false);
   
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const recognitionRef = useRef<any>(null);
   const audioRef = useRef<HTMLAudioElement | null>(null);
 
-  // Check if this is part of a full interview flow
-  const isFullInterview = searchParams.get('fullInterview') === 'true';
+  // Deepgram hook for speech recognition
+  const { startRecording, stopRecording, isRecording } = useDeepgram({
+    onTranscript: (text) => {
+      setTranscript(prev => prev + ' ' + text);
+    },
+    onError: (error) => {
+      console.error('Deepgram error:', error);
+    },
+    onFillerWord: (word) => {
+      // Only count filler words if detection is enabled
+      if (fillerWordDetectionEnabled) {
+        console.log('Filler word detected:', word);
+        setFillerWordCount(prev => prev + 1);
+      }
+    },
+  });
 
   // Get session params from URL
   const sessionParams: SessionParams = {
@@ -46,52 +58,6 @@ function LiveInterviewSessionContent() {
     seniority: searchParams.get('seniority') || undefined,
     jobDescription: searchParams.get('jobDescription') || undefined,
   };
-
-  // Calculate current progress (count user messages as answered questions)
-  const answeredQuestions = messages.filter(m => m.role === 'user').length;
-  const progressPercentage = interviewComplete ? 100 : (answeredQuestions / totalQuestions) * 100;
-
-  // Initialize speech recognition
-  useEffect(() => {
-    if (typeof window !== 'undefined' && 'webkitSpeechRecognition' in window) {
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      const SpeechRecognition = (window as any).webkitSpeechRecognition;
-      const recognition = new SpeechRecognition();
-      
-      recognition.continuous = true;
-      recognition.interimResults = true;
-      recognition.lang = 'en-US';
-
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      recognition.onresult = (event: any) => {
-        let finalTranscript = '';
-
-        for (let i = event.resultIndex; i < event.results.length; i++) {
-          const transcript = event.results[i][0].transcript;
-          if (event.results[i].isFinal) {
-            finalTranscript += transcript + ' ';
-          }
-        }
-
-        if (finalTranscript) {
-          setTranscript(prev => prev + finalTranscript);
-        }
-      };
-
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      recognition.onerror = (event: any) => {
-        console.error('Speech recognition error:', event.error);
-      };
-
-      recognitionRef.current = recognition;
-    }
-
-    return () => {
-      if (recognitionRef.current) {
-        recognitionRef.current.stop();
-      }
-    };
-  }, []);
 
   // Start the interview
   const startInterview = async () => {
@@ -184,22 +150,16 @@ function LiveInterviewSessionContent() {
 
   // Start listening to user
   const startListening = () => {
-    if (recognitionRef.current && !isRecording) {
-      setTranscript('');
-      recognitionRef.current.start();
-      setIsRecording(true);
-    }
+    setTranscript('');
+    startRecording();
   };
 
   // Stop listening and process response
   const stopListening = async () => {
-    if (recognitionRef.current && isRecording) {
-      recognitionRef.current.stop();
-      setIsRecording(false);
+    stopRecording();
 
-      if (transcript.trim()) {
-        await processUserResponse(transcript.trim());
-      }
+    if (transcript.trim()) {
+      await processUserResponse(transcript.trim());
     }
   };
 
@@ -278,9 +238,7 @@ function LiveInterviewSessionContent() {
 
   // End interview
   const endInterview = () => {
-    if (recognitionRef.current) {
-      recognitionRef.current.stop();
-    }
+    stopRecording();
     if (audioRef.current) {
       audioRef.current.pause();
     }
@@ -302,7 +260,7 @@ function LiveInterviewSessionContent() {
         {/* Header */}
         <div className="bg-gradient-to-r from-[rgba(76,166,38,1)] to-[rgba(76,166,38,0.8)] p-6 text-white">
           <div className="flex justify-between items-center">
-            <div>
+            <div className="flex-1">
               <h1 className="text-2xl font-bold">Live Practice Interview</h1>
               <p className="text-sm text-white/80 mt-1">
                 Behavioral Interview Session
@@ -311,6 +269,25 @@ function LiveInterviewSessionContent() {
                 )}
               </p>
             </div>
+            
+            {/* Filler Word Detection Toggle */}
+            {interviewStarted && (
+              <button
+                onClick={() => setFillerWordDetectionEnabled(!fillerWordDetectionEnabled)}
+                className="flex items-center gap-2 bg-white/20 hover:bg-white/30 px-4 py-2 rounded-lg mr-4 transition-all duration-200"
+                title={fillerWordDetectionEnabled ? 'Disable Filler Word Detection' : 'Enable Filler Word Detection'}
+              >
+                {fillerWordDetectionEnabled ? (
+                  <Bell className="w-5 h-5" />
+                ) : (
+                  <BellOff className="w-5 h-5" />
+                )}
+                <span className="text-xs font-medium">
+                  {fillerWordDetectionEnabled ? 'On' : 'Off'}
+                </span>
+              </button>
+            )}
+            
             <button
               onClick={endInterview}
               className="p-2 hover:bg-white/20 rounded-lg transition-all duration-200 cursor-pointer hover:scale-110"
@@ -393,6 +370,31 @@ function LiveInterviewSessionContent() {
                   <p className="text-gray-700 dark:text-gray-300">
                     {transcript || 'Listening...'}
                   </p>
+                </div>
+              )}
+
+              {/* Filler Word Counter */}
+              {fillerWordDetectionEnabled && (
+                <div className="bg-yellow-50 dark:bg-yellow-900/20 rounded-xl p-4 border border-yellow-200 dark:border-yellow-800">
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-3">
+                      <div className="bg-yellow-500/20 rounded-full p-2">
+                        <AlertCircle className="w-5 h-5 text-yellow-600 dark:text-yellow-400" />
+                      </div>
+                      <div>
+                        <h3 className="text-sm font-medium text-yellow-900 dark:text-yellow-300">
+                          Filler Words Detected
+                        </h3>
+                        <p className="text-xs text-yellow-700 dark:text-yellow-400 opacity-80">
+                          Try to minimize usage for better delivery
+                        </p>
+                      </div>
+                    </div>
+                    <div className="text-center bg-yellow-100 dark:bg-yellow-900/30 px-4 py-2 rounded-lg">
+                      <p className="text-xs font-medium text-yellow-700 dark:text-yellow-400 mb-1">Count</p>
+                      <p className="text-2xl font-bold text-yellow-900 dark:text-yellow-300">{fillerWordCount}</p>
+                    </div>
+                  </div>
                 </div>
               )}
 
