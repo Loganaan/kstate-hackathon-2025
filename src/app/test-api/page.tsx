@@ -240,7 +240,7 @@ export default function TestAPIPage() {
                 <button
                   onClick={handleGenerateQuestions}
                   disabled={loading}
-                  className="w-full bg-blue-600 text-white py-2 px-4 rounded-md hover:bg-blue-700 disabled:bg-gray-400 disabled:cursor-not-allowed cursor-pointer font-medium transition-all duration-200 hover:shadow-lg hover:scale-105"
+                  className="w-full bg-[rgba(76,166,38,1)] hover:bg-[rgba(76,166,38,0.9)] text-white py-2 px-4 rounded-md disabled:bg-gray-400 disabled:cursor-not-allowed cursor-pointer font-medium transition-all duration-200 hover:shadow-lg hover:scale-105 disabled:hover:scale-100 disabled:hover:shadow-none"
                 >
                   {loading ? 'Generating...' : 'Generate Questions'}
                 </button>
@@ -339,7 +339,7 @@ export default function TestAPIPage() {
                 <button
                   onClick={handleQueryQuestions}
                   disabled={loading}
-                  className="w-full bg-green-600 text-white py-2 px-4 rounded-md hover:bg-green-700 disabled:bg-gray-400 disabled:cursor-not-allowed cursor-pointer font-medium transition-all duration-200 hover:shadow-lg hover:scale-105"
+                  className="w-full bg-green-600 text-white py-2 px-4 rounded-md hover:bg-green-700 disabled:bg-gray-400 disabled:cursor-not-allowed cursor-pointer font-medium transition-all duration-200 hover:shadow-lg hover:scale-105 disabled:hover:scale-100 disabled:hover:shadow-none"
                 >
                   {loading ? 'Querying...' : 'Query Questions'}
                 </button>

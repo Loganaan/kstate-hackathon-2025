@@ -65,7 +65,7 @@ export default function NewSessionModal({ isOpen, onClose, onStart }: NewSession
           </div>
           <button
             onClick={handleClose}
-            className="text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 transition-colors cursor-pointer"
+            className="text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 transition-all duration-200 cursor-pointer hover:scale-110"
           >
             <X className="w-6 h-6" />
           </button>

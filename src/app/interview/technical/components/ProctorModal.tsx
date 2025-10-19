@@ -64,13 +64,13 @@ export default function ProctorModal({ isOpen, onClose, onStart }: ProctorModalP
         <div className="flex gap-3">
           <button
             onClick={onClose}
-            className="flex-1 px-4 py-2.5 rounded-lg font-medium text-gray-700 dark:text-gray-300 bg-gray-100 dark:bg-gray-800 hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors"
+            className="flex-1 px-4 py-2.5 rounded-lg font-medium text-gray-700 dark:text-gray-300 bg-gray-100 dark:bg-gray-800 hover:bg-gray-200 dark:hover:bg-gray-700 transition-all duration-200 cursor-pointer hover:scale-105 hover:shadow-md"
           >
             Cancel
           </button>
           <button
             onClick={onStart}
-            className="flex-1 px-4 py-2.5 rounded-lg font-medium text-white bg-[rgba(76,166,38,1)] hover:bg-[rgba(76,166,38,0.9)] transition-colors flex items-center justify-center gap-2"
+            className="flex-1 px-4 py-2.5 rounded-lg font-medium text-white bg-[rgba(76,166,38,1)] hover:bg-[rgba(76,166,38,0.9)] transition-all duration-200 cursor-pointer hover:scale-105 hover:shadow-lg flex items-center justify-center gap-2"
           >
             <Eye className="w-4 h-4" />
             Start Session
