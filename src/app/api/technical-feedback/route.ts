@@ -66,11 +66,14 @@ Be encouraging but thorough. Format your response in a clear, readable way.`;
       feedback 
     });
 
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error('Error generating technical feedback:', error);
     
+    const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+    const errorStatus = (error as { status?: number }).status;
+    
     // Check if it's a quota error
-    if (error.status === 429 || error.message?.includes('quota') || error.message?.includes('429')) {
+    if (errorStatus === 429 || errorMessage?.includes('quota') || errorMessage?.includes('429')) {
       return NextResponse.json(
         { 
           error: 'API quota exceeded',
@@ -100,7 +103,7 @@ Your answer has been saved successfully!`
     return NextResponse.json(
       { 
         error: 'Failed to generate feedback', 
-        details: error instanceof Error ? error.message : 'Unknown error',
+        details: errorMessage,
         feedback: 'Unable to generate AI feedback at this time. Please review your answer manually and try again later.'
       },
       { status: 500 }

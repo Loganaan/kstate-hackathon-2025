@@ -73,6 +73,16 @@ const MOCK_PROBLEM = {
   },
 };
 
+interface QuestionResult {
+  questionNumber: number;
+  format: string;
+  difficulty: string;
+  topicTags: string[];
+  status: 'correct' | 'partial' | 'incorrect' | 'submitted';
+  score?: number;
+  details?: string;
+}
+
 export default function TechnicalInterviewPage() {
   // API Integration state
   const [isSetupComplete, setIsSetupComplete] = useState(false);
@@ -83,7 +93,7 @@ export default function TechnicalInterviewPage() {
   
   // Interview completion state
   const [isInterviewComplete, setIsInterviewComplete] = useState(false);
-  const [questionResults, setQuestionResults] = useState<any[]>([]);
+  const [questionResults, setQuestionResults] = useState<QuestionResult[]>([]);
 
   // Editor state - Python only
   const [language] = useState<'python'>('python');
@@ -418,11 +428,12 @@ export default function TechnicalInterviewPage() {
   const saveQuestionResult = () => {
     if (!currentApiQuestion) return;
 
-    const result: any = {
+    const result: QuestionResult = {
       questionNumber: currentQuestionIndex + 1,
       format: currentApiQuestion.format,
       difficulty: currentApiQuestion.difficulty,
       topicTags: currentApiQuestion.topicTags,
+      status: 'submitted',
     };
 
     // Determine status based on question type

@@ -155,7 +155,7 @@ ${aiSummary ? `\nAI FEEDBACK\n-----------\n${aiSummary}` : ''}
             Interview Complete!
           </h1>
           <p className="text-xl text-gray-600 dark:text-gray-400">
-            Great job! Here's your performance summary.
+            Great job! Here&apos;s your performance summary.
           </p>
         </div>
 

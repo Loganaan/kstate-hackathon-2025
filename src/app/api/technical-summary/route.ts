@@ -1,9 +1,22 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { GoogleGenerativeAI } from '@google/generative-ai';
 
+interface QuestionResult {
+  format: string;
+  difficulty: string;
+  topicTags: string[];
+  status: string;
+  score?: number;
+  details?: string;
+}
+
 export async function POST(request: NextRequest) {
   try {
-    const { results, timeElapsed, totalQuestions } = await request.json();
+    const { results, timeElapsed, totalQuestions } = await request.json() as {
+      results: QuestionResult[];
+      timeElapsed: number;
+      totalQuestions: number;
+    };
 
     // Get API key from environment variable
     const apiKey = process.env.GEMINI_API_KEY;
@@ -28,7 +41,7 @@ export async function POST(request: NextRequest) {
 
     // Format results for the prompt
     const resultsText = results
-      .map((r: any, idx: number) => {
+      .map((r, idx: number) => {
         return `Question ${idx + 1}: ${r.format} (${r.difficulty})
 Topics: ${r.topicTags.join(', ')}
 Status: ${r.status}
@@ -42,9 +55,9 @@ ${r.score !== undefined ? `Score: ${r.score}%` : ''}`;
 **Interview Statistics:**
 - Total Questions: ${totalQuestions}
 - Time Taken: ${Math.floor(timeElapsed / 60)} minutes ${timeElapsed % 60} seconds
-- Coding Questions: ${results.filter((r: any) => r.format === 'coding').length}
-- Multiple Choice: ${results.filter((r: any) => r.format === 'multiple-choice').length}
-- Free Response: ${results.filter((r: any) => r.format === 'free-response').length}
+- Coding Questions: ${results.filter((r) => r.format === 'coding').length}
+- Multiple Choice: ${results.filter((r) => r.format === 'multiple-choice').length}
+- Free Response: ${results.filter((r) => r.format === 'free-response').length}
 
 **Detailed Results:**
 ${resultsText}
@@ -78,11 +91,14 @@ Be encouraging but honest. Provide actionable feedback that will help the candid
       summary 
     });
 
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error('Error generating technical summary:', error);
     
+    const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+    const errorStatus = (error as { status?: number }).status;
+    
     // Check if it's a quota error - provide helpful fallback
-    if (error.status === 429 || error.message?.includes('quota') || error.message?.includes('429')) {
+    if (errorStatus === 429 || errorMessage?.includes('quota') || errorMessage?.includes('429')) {
       return NextResponse.json({ 
         success: true,
         summary: `**Interview Performance Summary**
@@ -114,7 +130,7 @@ Be encouraging but honest. Provide actionable feedback that will help the candid
     return NextResponse.json(
       { 
         error: 'Failed to generate summary', 
-        details: error instanceof Error ? error.message : 'Unknown error',
+        details: errorMessage,
         summary: 'Unable to generate AI summary at this time. Your results have been saved.'
       },
       { status: 500 }

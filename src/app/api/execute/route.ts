@@ -207,7 +207,7 @@ except Exception as e:
             expected: testCase.output,
             actual: actual || '(no output)',
           });
-        } catch (error) {
+        } catch {
           resolve({
             passed: false,
             input: testCase.input,

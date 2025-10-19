@@ -1,8 +1,16 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { GoogleGenerativeAI } from '@google/generative-ai';
 
+interface TestResult {
+  passed: boolean;
+  input: string;
+  expected: string;
+  actual: string;
+  error?: string;
+}
+
 export async function POST(request: NextRequest) {
-  let testResults: any[] = [];
+  let testResults: TestResult[] = [];
   
   try {
     const { question, code, testResults: testResultsFromRequest, solutionOutline } = await request.json();
@@ -28,12 +36,12 @@ export async function POST(request: NextRequest) {
     }
 
     // Calculate test results summary
-    const passedTests = testResults?.filter((t: any) => t.passed).length || 0;
+    const passedTests = testResults?.filter((t) => t.passed).length || 0;
     const totalTests = testResults?.length || 0;
     const testSummary = totalTests > 0 ? `${passedTests}/${totalTests} tests passed` : 'No tests run';
 
     // Format test results details
-    const testDetails = testResults?.map((t: any, idx: number) => 
+    const testDetails = testResults?.map((t, idx: number) => 
       `Test ${idx + 1}: ${t.passed ? '✓ Passed' : '✗ Failed'}
   Input: ${t.input}
   Expected: ${t.expected}
@@ -171,12 +179,15 @@ Be specific, encouraging, and educational. Reference the actual code and test re
       feedback
     });
 
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error('Error generating coding feedback:', error);
     
+    const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+    const errorStatus = (error as { status?: number }).status;
+    
     // Check if it's a quota error
-    if (error.status === 429 || error.message?.includes('quota') || error.message?.includes('429')) {
-      const passedTests = testResults?.filter((t: any) => t.passed).length || 0;
+    if (errorStatus === 429 || errorMessage?.includes('quota') || errorMessage?.includes('429')) {
+      const passedTests = testResults?.filter((t) => t.passed).length || 0;
       const totalTests = testResults?.length || 0;
       const failedTests = totalTests - passedTests;
       
@@ -229,7 +240,7 @@ The Gemini API has reached its daily quota limit. Here are some tips for self-re
     return NextResponse.json(
       {
         error: 'Failed to generate feedback',
-        details: error instanceof Error ? error.message : 'Unknown error',
+        details: errorMessage,
         feedback: 'Unable to generate AI feedback at this time. Please review your code manually and try again later.'
       },
       { status: 500 }
