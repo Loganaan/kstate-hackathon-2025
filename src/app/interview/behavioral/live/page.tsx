@@ -595,7 +595,13 @@ function LiveInterviewSessionContent() {
                       <Button
                         variant="primary"
                         className="bg-[rgba(76,166,38,1)] hover:bg-[rgba(76,166,38,0.9)]"
-                        onClick={() => router.push(`/interview/behavioral/results/${sessionId}`)}
+                        onClick={() => {
+                          // Pass fullInterview parameter to results page
+                          const resultsUrl = isFullInterview 
+                            ? `/interview/behavioral/results/${sessionId}?fullInterview=true`
+                            : `/interview/behavioral/results/${sessionId}`;
+                          router.push(resultsUrl);
+                        }}
                       >
                         View Results & Feedback
                       </Button>

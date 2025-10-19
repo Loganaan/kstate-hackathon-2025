@@ -652,6 +652,7 @@ function BehavioralInterviewContent() {
                     timestamp={message.timestamp}
                     isCompletion={message.isCompletion}
                     sessionId={currentSession?.firebaseId || currentSession?.id}
+                    isFullInterview={isFullInterview}
                   />
                 ))}
                 {isLoading && (

@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { useParams, useRouter } from 'next/navigation';
+import { useParams, useRouter, useSearchParams } from 'next/navigation';
 import BehavioralSummary from '../../components/BehavioralSummary';
 
 interface QuestionAnswer {
@@ -20,7 +20,11 @@ interface FeedbackData {
 export default function BehavioralResultsPage() {
   const params = useParams();
   const router = useRouter();
+  const searchParams = useSearchParams();
   const sessionId = params.sessionId as string;
+  
+  // Check if this is part of full interview flow
+  const isFullInterview = searchParams.get('fullInterview') === 'true';
   
   const [feedbackData, setFeedbackData] = useState<FeedbackData | null>(null);
   const [loading, setLoading] = useState(true);
@@ -82,6 +86,27 @@ export default function BehavioralResultsPage() {
     router.push('/interview/behavioral');
   };
 
+  const handleContinueToTechnical = () => {
+    // Get stored full interview params
+    const fullInterviewParamsStr = sessionStorage.getItem('fullInterviewParams');
+    const searchParams = new URLSearchParams();
+    searchParams.append('fullInterview', 'true');
+    
+    if (fullInterviewParamsStr) {
+      try {
+        const params = JSON.parse(fullInterviewParamsStr);
+        if (params.company) searchParams.append('company', params.company);
+        if (params.role) searchParams.append('role', params.role);
+        if (params.seniority) searchParams.append('seniority', params.seniority);
+        if (params.jobDescription) searchParams.append('jobDescription', params.jobDescription);
+      } catch (e) {
+        console.error('Error parsing full interview params:', e);
+      }
+    }
+    
+    router.push(`/interview/technical?${searchParams.toString()}`);
+  };
+
   if (loading) {
     return (
       <div className="min-h-screen bg-gray-50 dark:bg-gray-950 pl-20 flex items-center justify-center">
@@ -123,6 +148,8 @@ export default function BehavioralResultsPage() {
       overallRating={feedbackData.overallRating}
       onRestart={handleRestart}
       onExit={handleExit}
+      isFullInterview={isFullInterview}
+      onContinueToTechnical={handleContinueToTechnical}
     />
   );
 }

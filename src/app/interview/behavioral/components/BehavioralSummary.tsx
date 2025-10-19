@@ -15,6 +15,8 @@ interface BehavioralSummaryProps {
   overallRating: number; // 1-10
   onRestart: () => void;
   onExit: () => void;
+  isFullInterview?: boolean; // Whether this is part of full interview flow
+  onContinueToTechnical?: () => void; // Handler to continue to technical interview
 }
 
 export default function BehavioralSummary({
@@ -23,6 +25,8 @@ export default function BehavioralSummary({
   overallRating,
   onRestart,
   onExit,
+  isFullInterview = false,
+  onContinueToTechnical,
 }: BehavioralSummaryProps) {
   const downloadReport = () => {
     const reportContent = `
@@ -177,18 +181,31 @@ ${overallFeedback}
             <Download className="w-5 h-5" />
             Download Report
           </button>
-          <button
-            onClick={onRestart}
-            className="flex-1 py-3 px-6 bg-green-600 text-white rounded-lg font-semibold hover:bg-green-700 transition-colors"
-          >
-            Start New Interview
-          </button>
-          <button
-            onClick={onExit}
-            className="flex-1 py-3 px-6 bg-green-600 text-white rounded-lg font-semibold hover:bg-green-700 transition-colors"
-          >
-            Return to Dashboard
-          </button>
+          {isFullInterview && onContinueToTechnical ? (
+            // Full interview flow - show Continue to Technical button
+            <button
+              onClick={onContinueToTechnical}
+              className="flex-1 py-3 px-6 bg-gradient-to-r from-[rgba(76,166,38,1)] to-[rgba(76,166,38,0.8)] hover:from-[rgba(76,166,38,0.9)] hover:to-[rgba(76,166,38,0.7)] text-white rounded-lg font-semibold transition-all duration-200 shadow-lg hover:shadow-xl transform hover:scale-105"
+            >
+              Continue to Technical Interview →
+            </button>
+          ) : (
+            // Standalone flow - show normal buttons
+            <>
+              <button
+                onClick={onRestart}
+                className="flex-1 py-3 px-6 bg-green-600 text-white rounded-lg font-semibold hover:bg-green-700 transition-colors"
+              >
+                Start New Interview
+              </button>
+              <button
+                onClick={onExit}
+                className="flex-1 py-3 px-6 bg-green-600 text-white rounded-lg font-semibold hover:bg-green-700 transition-colors"
+              >
+                Return to Dashboard
+              </button>
+            </>
+          )}
         </div>
       </div>
     </div>

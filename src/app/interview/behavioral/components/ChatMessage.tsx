@@ -9,14 +9,18 @@ interface ChatMessageProps {
   timestamp: Date;
   isCompletion?: boolean;
   sessionId?: string;
+  isFullInterview?: boolean;
 }
 
-export default function ChatMessage({ role, content, timestamp, isCompletion, sessionId }: ChatMessageProps) {
+export default function ChatMessage({ role, content, timestamp, isCompletion, sessionId, isFullInterview }: ChatMessageProps) {
   const router = useRouter();
 
   const handleViewResults = () => {
     if (sessionId) {
-      router.push(`/interview/behavioral/results/${sessionId}`);
+      const resultsUrl = isFullInterview 
+        ? `/interview/behavioral/results/${sessionId}?fullInterview=true`
+        : `/interview/behavioral/results/${sessionId}`;
+      router.push(resultsUrl);
     }
   };
 
