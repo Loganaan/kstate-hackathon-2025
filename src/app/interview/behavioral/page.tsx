@@ -1,8 +1,8 @@
 'use client';
 
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef, useCallback, useMemo } from 'react';
 import { useRouter } from 'next/navigation';
-import { Plus, Video } from 'lucide-react';
+import { Plus, Video, ArrowRight } from 'lucide-react';
 import Button from '@/components/Button';
 import ChatMessage from './components/ChatMessage';
 import SessionCard from './components/SessionCard';
@@ -18,6 +18,7 @@ interface Message {
   role: 'user' | 'assistant';
   content: string;
   timestamp: Date;
+  isCompletion?: boolean;
 }
 
 interface ChatSession {
@@ -29,6 +30,7 @@ interface ChatSession {
   messageCount: number;
   messages: Message[];
   params?: SessionParams;
+  isComplete?: boolean;
 }
 
 function BehavioralInterviewContent() {
@@ -40,7 +42,10 @@ function BehavioralInterviewContent() {
   const [showLiveModal, setShowLiveModal] = useState(false);
   const [showNewSessionModal, setShowNewSessionModal] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
+  const [isFullInterview, setIsFullInterview] = useState(false);
+  const [showTransitionModal, setShowTransitionModal] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
+  const sessionCreationInitiatedRef = useRef(false);
 
   // Load sessions from Firebase on mount
   useEffect(() => {
@@ -49,24 +54,40 @@ function BehavioralInterviewContent() {
       
       try {
         const firebaseSessions = await firebaseUtils.getChatSessions(user.uid, 'behavioral');
-        const convertedSessions: ChatSession[] = firebaseSessions.map(session => ({
-          id: session.id,
-          firebaseId: session.id,
-          title: session.title,
-          lastMessage: session.lastMessage,
-          timestamp: session.timestamp.toDate(),
-          messageCount: session.messageCount,
-          messages: session.messages.map(msg => ({
+        const convertedSessions: ChatSession[] = firebaseSessions.map(session => {
+          const sessionMessages: Message[] = session.messages.map(msg => ({
             ...msg,
-            timestamp: msg.timestamp.toDate()
-          })),
-          params: session.params ? {
-            company: session.params.company || '',
-            role: session.params.role || '',
-            seniority: session.params.seniority || '',
-            jobDescription: session.params.jobDescription || ''
-          } : undefined
-        }));
+            timestamp: msg.timestamp.toDate(),
+            isCompletion: false
+          }));
+
+          // Detect if session is complete by checking if last message is the completion message
+          const lastMessage = sessionMessages[sessionMessages.length - 1];
+          const isComplete = lastMessage?.role === 'assistant' && 
+                            lastMessage?.content.includes('Congratulations on completing the behavioral interview');
+          
+          // If complete, mark the last message with isCompletion flag
+          if (isComplete && lastMessage) {
+            lastMessage.isCompletion = true;
+          }
+
+          return {
+            id: session.id,
+            firebaseId: session.id,
+            title: session.title,
+            lastMessage: session.lastMessage,
+            timestamp: session.timestamp.toDate(),
+            messageCount: session.messageCount,
+            messages: sessionMessages,
+            params: session.params ? {
+              company: session.params.company || '',
+              role: session.params.role || '',
+              seniority: session.params.seniority || '',
+              jobDescription: session.params.jobDescription || ''
+            } : undefined,
+            isComplete
+          };
+        });
         setSessions(convertedSessions);
       } catch (error) {
         console.error('Error loading sessions from Firebase:', error);
@@ -82,11 +103,17 @@ function BehavioralInterviewContent() {
   }, [sessions, activeSessionId]);
 
   // Get current session messages
-  const currentSession = sessions.find(s => s.id === activeSessionId);
-  const messages = currentSession?.messages || [];
+  const currentSession = useMemo(() => 
+    sessions.find(s => s.id === activeSessionId),
+    [sessions, activeSessionId]
+  );
+  const messages = useMemo(() => 
+    currentSession?.messages || [],
+    [currentSession]
+  );
 
   // Count main questions (excluding follow-ups)
-  const countMainQuestions = () => {
+  const countMainQuestions = useCallback(() => {
     const assistantMessages = messages.filter(m => m.role === 'assistant');
     
     let mainQuestions = 0;
@@ -131,7 +158,64 @@ function BehavioralInterviewContent() {
     });
     
     return mainQuestions;
-  };
+  }, [messages]);
+
+  // Auto-scroll to bottom when messages change
+  useEffect(() => {
+    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+  }, [sessions, activeSessionId]);
+
+  // Detect if this is part of a full interview flow
+  useEffect(() => {
+    const urlParams = new URLSearchParams(window.location.search);
+    const isFullInterviewMode = urlParams.get('fullInterview') === 'true';
+    setIsFullInterview(isFullInterviewMode);
+
+    // Check if we have full interview params in sessionStorage
+    const fullInterviewParamsStr = sessionStorage.getItem('fullInterviewParams');
+    let fullInterviewParams = null;
+    if (fullInterviewParamsStr) {
+      try {
+        fullInterviewParams = JSON.parse(fullInterviewParamsStr);
+      } catch (e) {
+        console.error('Error parsing full interview params:', e);
+      }
+    }
+
+    // Prevent duplicate session creation (especially in React Strict Mode)
+    if (isFullInterviewMode && sessions.length === 0 && !sessionCreationInitiatedRef.current) {
+      sessionCreationInitiatedRef.current = true;
+      
+      // Auto-create session with params from URL or sessionStorage
+      const company = urlParams.get('company') || fullInterviewParams?.company;
+      const role = urlParams.get('role') || fullInterviewParams?.role;
+      const seniority = urlParams.get('seniority') || fullInterviewParams?.seniority;
+      const jobDescription = urlParams.get('jobDescription') || fullInterviewParams?.jobDescription;
+      
+      const params: SessionParams | undefined = (company || role || seniority || jobDescription) ? {
+        company: company || '',
+        role: role || '',
+        seniority: seniority || '',
+        jobDescription: jobDescription || '',
+      } : undefined;
+      
+      createNewSession(params);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  // Check if behavioral interview is complete (4 main questions answered)
+  useEffect(() => {
+    if (isFullInterview && currentSession && messages.length > 0) {
+      const mainQuestionsCount = countMainQuestions();
+      
+      // Check if we've completed 4 questions - but DON'T auto-show modal
+      // User will manually trigger it with the button
+      if (mainQuestionsCount >= 4 && messages[messages.length - 1].role === 'user') {
+        // Modal will be triggered manually via button click
+      }
+    }
+  }, [messages, isFullInterview, currentSession, countMainQuestions]);
 
   // Generate first question for a new session
   const generateFirstQuestion = async (params?: SessionParams): Promise<Message> => {
@@ -232,7 +316,19 @@ function BehavioralInterviewContent() {
         role: 'assistant',
         content: data.response || 'I apologize, but I encountered an error. Could you please try again?',
         timestamp: new Date(),
+        isCompletion: data.interviewComplete || false,
       };
+
+      // If interview is complete, mark the session as complete
+      if (data.interviewComplete && currentSession) {
+        setSessions(prevSessions => 
+          prevSessions.map(session => 
+            session.id === activeSessionId
+              ? { ...session, isComplete: true }
+              : session
+          )
+        );
+      }
 
       // Save both user and assistant messages to Firebase only if user is logged in
       if (user && currentSession?.firebaseId) {
@@ -307,6 +403,12 @@ function BehavioralInterviewContent() {
   };
 
   const createNewSession = async (params?: SessionParams) => {
+    // Prevent concurrent session creation
+    if (isLoading) {
+      console.log('Session creation already in progress, skipping...');
+      return;
+    }
+    
     setIsLoading(true);
     
     try {
@@ -366,16 +468,36 @@ function BehavioralInterviewContent() {
     }
   };
 
-  const deleteSession = (sessionId: string) => {
+  const deleteSession = async (sessionId: string) => {
+    const session = sessions.find(s => s.id === sessionId);
+    
+    // Delete from Firebase if it has a firebaseId
+    if (session?.firebaseId) {
+      try {
+        await firebaseUtils.deleteChatSession(session.firebaseId);
+      } catch (error) {
+        console.error('Error deleting session from Firebase:', error);
+        // Continue with local deletion even if Firebase deletion fails
+      }
+    }
+    
+    // Remove from local state
     setSessions(sessions.filter(s => s.id !== sessionId));
-    if (activeSessionId === sessionId && sessions.length > 1) {
-      setActiveSessionId(sessions[0].id);
+    
+    // If deleting the active session, switch to another one
+    if (activeSessionId === sessionId) {
+      const remainingSessions = sessions.filter(s => s.id !== sessionId);
+      if (remainingSessions.length > 0) {
+        setActiveSessionId(remainingSessions[0].id);
+      } else {
+        setActiveSessionId('');
+      }
     }
   };
 
   return (
     <div className="bg-gray-50 dark:bg-gray-950 min-h-[calc(100vh-8rem)]">
-      <div className="pl-24 bg-gray-50 dark:bg-gray-950">
+      <div className="bg-gray-50 dark:bg-gray-950">
       <div className="flex h-[calc(100vh-8rem)]">
         
         {/* Left Sidebar - Sessions List */}
@@ -398,7 +520,39 @@ function BehavioralInterviewContent() {
             <Button
               variant="secondary"
               className="w-full flex items-center justify-center gap-2 border-[rgba(76,166,38,1)] text-[rgba(76,166,38,1)] hover:bg-[rgba(76,166,38,0.1)]"
-              onClick={() => setShowLiveModal(true)}
+              onClick={() => {
+                // If in full interview mode, bypass modal and auto-pass parameters
+                if (isFullInterview) {
+                  const fullInterviewParamsStr = sessionStorage.getItem('fullInterviewParams');
+                  let params: SessionParams | undefined = undefined;
+                  
+                  if (fullInterviewParamsStr) {
+                    try {
+                      const fullInterviewParams = JSON.parse(fullInterviewParamsStr);
+                      params = {
+                        company: fullInterviewParams.company || '',
+                        role: fullInterviewParams.role || '',
+                        seniority: fullInterviewParams.seniority || '',
+                        jobDescription: fullInterviewParams.jobDescription || ''
+                      };
+                    } catch (e) {
+                      console.error('Error parsing full interview params:', e);
+                    }
+                  }
+                  
+                  // Navigate directly to live practice with stored params
+                  const searchParams = new URLSearchParams();
+                  searchParams.append('fullInterview', 'true'); // Include full interview flag for progress bar
+                  if (params?.company) searchParams.append('company', params.company);
+                  if (params?.role) searchParams.append('role', params.role);
+                  if (params?.seniority) searchParams.append('seniority', params.seniority);
+                  if (params?.jobDescription) searchParams.append('jobDescription', params.jobDescription);
+                  router.push(`/interview/behavioral/live?${searchParams.toString()}`);
+                } else {
+                  // Normal mode: show modal for manual input
+                  setShowLiveModal(true);
+                }
+              }}
             >
               <Video className="w-5 h-5" />
               Start Live Practice
@@ -434,13 +588,25 @@ function BehavioralInterviewContent() {
                 </h1>
               </div>
               {currentSession && messages.length > 0 && (
-                <div className="text-right">
-                  <div className="text-sm font-medium text-gray-900 dark:text-gray-100">
-                    Question {Math.min(countMainQuestions(), 4)} of 4
+                <div className="flex items-center gap-4">
+                  <div className="text-right">
+                    <div className="text-sm font-medium text-gray-900 dark:text-gray-100">
+                      Question {Math.min(countMainQuestions(), 4)} of 4
+                    </div>
+                    <div className="text-xs text-gray-500 dark:text-gray-400 mt-1">
+                      Answer to continue
+                    </div>
                   </div>
-                  <div className="text-xs text-gray-500 dark:text-gray-400 mt-1">
-                    Answer to continue
-                  </div>
+                  {/* Continue button - shows when 4 questions complete in full interview mode */}
+                  {isFullInterview && countMainQuestions() >= 4 && (
+                    <button
+                      onClick={() => setShowTransitionModal(true)}
+                      className="bg-gradient-to-r from-[rgba(76,166,38,1)] to-[rgba(76,166,38,0.8)] hover:from-[rgba(76,166,38,0.9)] hover:to-[rgba(76,166,38,0.7)] text-white px-6 py-2.5 rounded-lg font-medium transition-all duration-200 flex items-center gap-2 shadow-lg hover:shadow-xl transform hover:scale-105"
+                    >
+                      Continue
+                      <ArrowRight className="w-4 h-4" />
+                    </button>
+                  )}
                 </div>
               )}
             </div>
@@ -484,6 +650,9 @@ function BehavioralInterviewContent() {
                     role={message.role}
                     content={message.content}
                     timestamp={message.timestamp}
+                    isCompletion={message.isCompletion}
+                    sessionId={currentSession?.firebaseId || currentSession?.id}
+                    isFullInterview={isFullInterview}
                   />
                 ))}
                 {isLoading && (
@@ -507,7 +676,7 @@ function BehavioralInterviewContent() {
             value={inputMessage}
             onChange={setInputMessage}
             onSend={handleSendMessage}
-            disabled={isLoading || !currentSession}
+            disabled={isLoading || !currentSession || currentSession.isComplete}
           />
         </div>
       </div>
@@ -517,17 +686,19 @@ function BehavioralInterviewContent() {
       <LivePracticeModal
         isOpen={showLiveModal}
         onClose={() => setShowLiveModal(false)}
-        onStart={() => {
+        onStart={(params) => {
           setShowLiveModal(false);
-          // Navigate to live practice session with current session params
-          const params = new URLSearchParams();
-          if (currentSession?.params) {
-            if (currentSession.params.company) params.append('company', currentSession.params.company);
-            if (currentSession.params.role) params.append('role', currentSession.params.role);
-            if (currentSession.params.seniority) params.append('seniority', currentSession.params.seniority);
-            if (currentSession.params.jobDescription) params.append('jobDescription', currentSession.params.jobDescription);
+          // Navigate to live practice session with params
+          const searchParams = new URLSearchParams();
+          // Pass fullInterview flag if we're in full interview mode
+          if (isFullInterview) {
+            searchParams.append('fullInterview', 'true');
           }
-          router.push(`/interview/behavioral/live?${params.toString()}`);
+          if (params?.company) searchParams.append('company', params.company);
+          if (params?.role) searchParams.append('role', params.role);
+          if (params?.seniority) searchParams.append('seniority', params.seniority);
+          if (params?.jobDescription) searchParams.append('jobDescription', params.jobDescription);
+          router.push(`/interview/behavioral/live?${searchParams.toString()}`);
         }}
       />
 
@@ -536,10 +707,117 @@ function BehavioralInterviewContent() {
         isOpen={showNewSessionModal}
         onClose={() => setShowNewSessionModal(false)}
         onStart={(params) => {
-          setShowNewSessionModal(false);
-          createNewSession(params);
-        }}
-      />
+        setShowNewSessionModal(false);
+        createNewSession(params);
+      }}
+      initialParams={(() => {
+        // Try to get full interview params from sessionStorage to pre-fill the form
+        // Check if we're in the browser (not SSR)
+        if (typeof window !== 'undefined') {
+          const fullInterviewParamsStr = sessionStorage.getItem('fullInterviewParams');
+          if (fullInterviewParamsStr) {
+            try {
+              return JSON.parse(fullInterviewParamsStr);
+            } catch (e) {
+              console.error('Error parsing full interview params:', e);
+            }
+          }
+        }
+        return undefined;
+      })()}
+    />      {/* Transition Modal - Full Interview Flow */}
+      {showTransitionModal && (
+        <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+          <div className="bg-white dark:bg-gray-800 rounded-3xl shadow-2xl max-w-2xl w-full p-8">
+            <div className="text-center">
+              {/* Success Icon */}
+              <div className="mb-6">
+                <div className="w-20 h-20 bg-green-100 dark:bg-green-900/30 rounded-full flex items-center justify-center mx-auto">
+                  <svg 
+                    className="w-12 h-12 text-green-600 dark:text-green-400" 
+                    fill="none" 
+                    stroke="currentColor" 
+                    viewBox="0 0 24 24"
+                  >
+                    <path 
+                      strokeLinecap="round" 
+                      strokeLinejoin="round" 
+                      strokeWidth={2} 
+                      d="M5 13l4 4L19 7" 
+                    />
+                  </svg>
+                </div>
+              </div>
+
+              {/* Title */}
+              <h2 className="text-3xl font-bold text-gray-900 dark:text-white mb-4">
+                Behavioral Round Complete!
+              </h2>
+
+              {/* Description */}
+              <p className="text-lg text-gray-600 dark:text-gray-300 mb-8">
+                Great job! You&apos;ve completed the behavioral interview. Now let&apos;s move on to the technical round 
+                to assess your coding skills.
+              </p>
+
+              {/* Transition Button */}
+              <Button
+                variant="primary"
+                className="bg-gradient-to-r from-[rgba(76,166,38,1)] to-[rgba(76,166,38,0.8)] hover:from-[rgba(76,166,38,0.9)] hover:to-[rgba(76,166,38,0.7)] text-white px-8 py-4 text-lg rounded-2xl shadow-xl hover:shadow-2xl transition-all duration-300 flex items-center gap-3 mx-auto hover:scale-105"
+                onClick={() => {
+                  // Store stage completion
+                  sessionStorage.setItem('behavioralComplete', 'true');
+                  
+                  // Navigate to technical interview with proper params
+                  const params = new URLSearchParams();
+                  params.append('fullInterview', 'true');
+                  
+                  // Get params from current session or sessionStorage
+                  if (currentSession?.params) {
+                    if (currentSession.params.company) params.append('company', currentSession.params.company);
+                    if (currentSession.params.role) params.append('role', currentSession.params.role);
+                    if (currentSession.params.seniority) params.append('seniority', currentSession.params.seniority);
+                    if (currentSession.params.jobDescription) params.append('jobDescription', currentSession.params.jobDescription);
+                  } else {
+                    // Fallback to sessionStorage
+                    const fullInterviewParamsStr = sessionStorage.getItem('fullInterviewParams');
+                    if (fullInterviewParamsStr) {
+                      try {
+                        const fullInterviewParams = JSON.parse(fullInterviewParamsStr);
+                        if (fullInterviewParams.company) params.append('company', fullInterviewParams.company);
+                        if (fullInterviewParams.role) params.append('role', fullInterviewParams.role);
+                        if (fullInterviewParams.seniority) params.append('seniority', fullInterviewParams.seniority);
+                        if (fullInterviewParams.jobDescription) params.append('jobDescription', fullInterviewParams.jobDescription);
+                      } catch (e) {
+                        console.error('Error parsing full interview params:', e);
+                      }
+                    }
+                  }
+                  
+                  console.log('Navigating to technical with params:', params.toString());
+                  router.push(`/interview/technical?${params.toString()}`);
+                }}
+              >
+                Continue to Technical Round
+                <ArrowRight className="w-6 h-6" />
+              </Button>
+
+              {/* Optional: Skip/Cancel */}
+              <button
+                onClick={() => {
+                  setShowTransitionModal(false);
+                  // Clean up and return to dashboard
+                  sessionStorage.removeItem('fullInterviewParams');
+                  router.push('/dashboard');
+                }}
+                className="mt-4 text-sm text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200 transition-colors duration-200"
+              >
+                Exit Interview
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

@@ -4,17 +4,31 @@
 import Link from "next/link";
 import { useEffect, useState } from "react";
 import { useSplash } from "@/components/SplashProvider";
+import FullInterviewModal, { InterviewParams } from "@/components/FullInterviewModal";
+import { useRouter } from "next/navigation";
 
 export default function Home() {
   const { showSplash, setShowSplash } = useSplash();
+  const router = useRouter();
   const [typedText, setTypedText] = useState("");
   const [headerTypedText, setHeaderTypedText] = useState("");
   const [spinCount, setSpinCount] = useState(0);
+  const [isModalOpen, setIsModalOpen] = useState(false);
   const splashText = "Welcome to TechReady";
   const headerText = "Ready to start your interview prep?";
 
   const handleFlowerClick = () => {
     setSpinCount(prev => prev + 1);
+  };
+
+  const handleStartFullInterview = (params: InterviewParams) => {
+    // Store interview parameters in sessionStorage
+    sessionStorage.setItem('fullInterviewParams', JSON.stringify(params));
+    
+    // Navigate to full interview session page
+    router.push('/interview/full-session');
+    
+    setIsModalOpen(false);
   };
 
   useEffect(() => {
@@ -211,7 +225,56 @@ export default function Home() {
             </span>
           </Link>
         </div>
+
+        {/* Full Interview Button */}
+        <div className="mt-16 flex justify-center">
+          <button
+            onClick={() => setIsModalOpen(true)}
+            onMouseEnter={(e) => {
+              e.currentTarget.style.transform = 'scale(1.05) rotate(-1deg)';
+              e.currentTarget.style.background = 'linear-gradient(to bottom right, rgba(76,166,38,0.15), rgba(76,166,38,0.05))';
+              e.currentTarget.style.borderColor = 'rgba(76,166,38,0.4)';
+              e.currentTarget.style.boxShadow = '0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04)';
+              const textSpan = e.currentTarget.querySelector('span');
+              if (textSpan) textSpan.style.color = 'rgba(76,166,38,1)';
+            }}
+            onMouseLeave={(e) => {
+              e.currentTarget.style.transform = 'scale(1)';
+              e.currentTarget.style.background = 'linear-gradient(to bottom right, rgb(107, 114, 128), rgb(75, 85, 99))';
+              e.currentTarget.style.borderColor = 'rgb(75, 85, 99)';
+              e.currentTarget.style.boxShadow = '0 4px 6px -1px rgba(0, 0, 0, 0.1)';
+              const textSpan = e.currentTarget.querySelector('span');
+              if (textSpan) textSpan.style.color = 'rgb(243, 244, 246)';
+            }}
+            className="group relative px-8 py-4 rounded-2xl cursor-pointer"
+            style={{
+              background: 'linear-gradient(to bottom right, rgb(107, 114, 128), rgb(75, 85, 99))',
+              borderWidth: '1px',
+              borderStyle: 'solid',
+              borderColor: 'rgb(75, 85, 99)',
+              transition: 'all 300ms ease-out',
+              boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1)'
+            }}
+          >
+            <span 
+              className="flex items-center gap-3 font-semibold text-lg"
+              style={{
+                color: 'rgb(243, 244, 246)',
+                transition: 'color 300ms ease-out'
+              }}
+            >
+              Start Full Interview Process
+            </span>
+          </button>
+        </div>
       </div>
+
+      {/* Full Interview Modal */}
+      <FullInterviewModal
+        isOpen={isModalOpen}
+        onClose={() => setIsModalOpen(false)}
+        onStart={handleStartFullInterview}
+      />
     </div>
   );
 }

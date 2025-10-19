@@ -1,16 +1,20 @@
 'use client';
 
 import { useRouter, useSearchParams } from 'next/navigation';
-import { useState, useEffect, useRef, Suspense } from 'react';
+import { useState, useRef, Suspense } from 'react';
 import { Mic, MicOff, Volume2, VolumeX, X, AlertCircle, Bell, BellOff } from 'lucide-react';
 import Button from '@/components/Button';
 import { useDeepgram } from '@/hooks/useDeepgram';
+import { firebaseUtils } from '@/lib/firebase';
+import { Timestamp } from 'firebase/firestore';
+import { useAuth } from '@/contexts/AuthContext';
 
 interface Message {
   id: string;
   role: 'user' | 'assistant';
   content: string;
   timestamp: Date;
+  isCompletion?: boolean;
 }
 
 interface SessionParams {
@@ -23,6 +27,7 @@ interface SessionParams {
 function LiveInterviewSessionContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
+  const { user } = useAuth();
   const [messages, setMessages] = useState<Message[]>([]);
   const [isMuted, setIsMuted] = useState(false);
   const [isProcessing, setIsProcessing] = useState(false);
@@ -31,13 +36,27 @@ function LiveInterviewSessionContent() {
   const [transcript, setTranscript] = useState('');
   const [fillerWordCount, setFillerWordCount] = useState(0);
   const [fillerWordDetectionEnabled, setFillerWordDetectionEnabled] = useState(false);
+  const [interviewComplete, setInterviewComplete] = useState(false);
+  const [sessionId, setSessionId] = useState<string | null>(null);
+  const [isComplete, setIsComplete] = useState(false);
   
   const audioRef = useRef<HTMLAudioElement | null>(null);
+
+  // Check if this is part of full interview flow
+  const isFullInterview = searchParams.get('fullInterview') === 'true';
+
+  // Track progress for full interview mode
+  const totalQuestions = 4;
+  const answeredQuestions = Math.floor(messages.filter(m => m.role === 'user').length);
+  const progressPercentage = (answeredQuestions / totalQuestions) * 100;
 
   // Deepgram hook for speech recognition
   const { startRecording, stopRecording, isRecording } = useDeepgram({
     onTranscript: (text) => {
-      setTranscript(prev => prev + ' ' + text);
+      setTranscript(prev => {
+        const newTranscript = prev ? prev + ' ' + text : text;
+        return newTranscript.trim();
+      });
     },
     onError: (error) => {
       console.error('Deepgram error:', error);
@@ -95,6 +114,48 @@ function LiveInterviewSessionContent() {
       };
       
       setMessages([firstMessage]);
+
+      // Create a Firebase session if user is logged in
+      if (user) {
+        try {
+          // Create a title based on the parameters
+          let title = 'Live Practice Session';
+          if (sessionParams.role && sessionParams.company) {
+            title = `Live: ${sessionParams.role} at ${sessionParams.company}`;
+          } else if (sessionParams.role) {
+            title = `Live: ${sessionParams.role}`;
+          } else if (sessionParams.company) {
+            title = `Live: ${sessionParams.company}`;
+          }
+
+          // Filter out undefined values from params for Firebase
+          const cleanParams: SessionParams = {};
+          if (sessionParams.company) cleanParams.company = sessionParams.company;
+          if (sessionParams.role) cleanParams.role = sessionParams.role;
+          if (sessionParams.seniority) cleanParams.seniority = sessionParams.seniority;
+          if (sessionParams.jobDescription) cleanParams.jobDescription = sessionParams.jobDescription;
+
+          const firebaseSessionId = await firebaseUtils.saveChatSession({
+            title,
+            lastMessage: questionText,
+            timestamp: Timestamp.fromDate(firstMessage.timestamp),
+            messageCount: 1,
+            messages: [{
+              id: firstMessage.id,
+              role: firstMessage.role,
+              content: firstMessage.content,
+              timestamp: Timestamp.fromDate(firstMessage.timestamp)
+            }],
+            ...(Object.keys(cleanParams).length > 0 ? { params: cleanParams } : {}),
+            userId: user.uid,
+            type: 'behavioral'
+          });
+          
+          setSessionId(firebaseSessionId);
+        } catch (error) {
+          console.error('Error saving session to Firebase:', error);
+        }
+      }
 
       // Speak the question using ElevenLabs
       await speakText(questionText);
@@ -158,8 +219,10 @@ function LiveInterviewSessionContent() {
   const stopListening = async () => {
     stopRecording();
 
-    if (transcript.trim()) {
-      await processUserResponse(transcript.trim());
+    const currentTranscript = transcript.trim();
+    if (currentTranscript) {
+      setTranscript(''); // Clear immediately to prevent reuse
+      await processUserResponse(currentTranscript);
     }
   };
 
@@ -176,6 +239,24 @@ function LiveInterviewSessionContent() {
 
     setMessages(prev => [...prev, userMessage]);
 
+    // Save user message to Firebase
+    if (user && sessionId) {
+      try {
+        await firebaseUtils.addMessageToSession(
+          sessionId,
+          {
+            id: userMessage.id,
+            role: userMessage.role,
+            content: userMessage.content,
+            timestamp: Timestamp.fromDate(userMessage.timestamp)
+          },
+          userMessage.content
+        );
+      } catch (error) {
+        console.error('Error saving user message to Firebase:', error);
+      }
+    }
+
     try {
       const response = await fetch('/api/gemini', {
         method: 'POST',
@@ -189,30 +270,70 @@ function LiveInterviewSessionContent() {
           })),
           interviewType: 'behavioral',
           params: sessionParams,
+          sessionId: sessionId,
+          userId: user?.uid,
         }),
       });
 
       const data = await response.json();
       const aiResponse = data.response || 'Thank you for sharing that.';
+      const isInterviewComplete = data.interviewComplete || false;
 
       const aiMessage: Message = {
         id: (Date.now() + 1).toString(),
         role: 'assistant',
         content: aiResponse,
         timestamp: new Date(),
+        isCompletion: data.interviewComplete || false,
       };
 
       setMessages(prev => [...prev, aiMessage]);
       setCurrentQuestion(aiResponse);
 
-      // Speak the AI response
-      await speakText(aiResponse);
+      // Check if interview is complete
+      if (data.interviewComplete) {
+        setIsComplete(true);
+        stopRecording(); // Stop recording when complete
+      }
 
-      // Start listening again for next answer
-      setTimeout(() => {
-        setTranscript('');
-        startListening();
-      }, 500);
+      // Save AI message to Firebase
+      if (user && sessionId) {
+        try {
+          await firebaseUtils.addMessageToSession(
+            sessionId,
+            {
+              id: aiMessage.id,
+              role: aiMessage.role,
+              content: aiMessage.content,
+              timestamp: Timestamp.fromDate(aiMessage.timestamp)
+            },
+            aiMessage.content
+          );
+        } catch (error) {
+          console.error('Error saving AI message to Firebase:', error);
+        }
+      }
+
+      // Only speak the AI response if it's NOT the final summary
+      if (!isInterviewComplete) {
+        await speakText(aiResponse);
+        
+        // Start listening again for next answer
+        setTimeout(() => {
+          setTranscript('');
+          startListening();
+        }, 500);
+      } else {
+        // Interview is complete - show the summary text but don't speak it
+        console.log('Interview complete - displaying summary without voice');
+        
+        // Stop recording and audio
+        stopRecording();
+        if (audioRef.current) {
+          audioRef.current.pause();
+        }
+        setInterviewComplete(true);
+      }
     } catch (error) {
       console.error('Error processing response:', error);
     } finally {
@@ -220,20 +341,56 @@ function LiveInterviewSessionContent() {
     }
   };
 
-  // End interview
-  const endInterview = () => {
+  // End interview (for early termination)
+  const endInterview = async () => {
     stopRecording();
     if (audioRef.current) {
       audioRef.current.pause();
     }
+    
+    // Save or update the complete conversation in Firebase before navigating
+    if (user && sessionId && messages.length > 0) {
+      try {
+        // Update the session with all messages to ensure everything is saved
+        const firebaseMessages = messages.map(msg => ({
+          id: msg.id,
+          role: msg.role,
+          content: msg.content,
+          timestamp: Timestamp.fromDate(msg.timestamp)
+        }));
+
+        const lastMsg = messages[messages.length - 1];
+        
+        await firebaseUtils.updateChatSession(sessionId, {
+          messages: firebaseMessages,
+          messageCount: messages.length,
+          lastMessage: lastMsg.content,
+          timestamp: Timestamp.fromDate(lastMsg.timestamp)
+        });
+      } catch (error) {
+        console.error('Error updating session in Firebase:', error);
+      }
+    }
+    
+    // Navigate back to behavioral home (not results, since interview was incomplete)
     router.push('/interview/behavioral');
   };
 
   const toggleMute = () => {
-    setIsMuted(!isMuted);
+    const newMutedState = !isMuted;
+    setIsMuted(newMutedState);
+    
     if (audioRef.current) {
-      if (!isMuted) {
+      if (newMutedState) {
+        // Muting - pause the audio
         audioRef.current.pause();
+      } else {
+        // Unmuting - resume the audio if it was paused
+        if (audioRef.current.paused) {
+          audioRef.current.play().catch(error => {
+            console.error('Error resuming audio:', error);
+          });
+        }
       }
     }
   };
@@ -281,10 +438,46 @@ function LiveInterviewSessionContent() {
           </div>
         </div>
 
+        {/* Progress Bar - Only show in full interview mode */}
+        {isFullInterview && interviewStarted && (
+          <div className="bg-white dark:bg-gray-900 px-6 py-4 border-b border-gray-200 dark:border-gray-800">
+            <div className="flex items-center justify-between mb-2">
+              <span className="text-sm font-medium text-gray-700 dark:text-gray-300">
+                Behavioral Interview Progress
+              </span>
+              <span className="text-sm font-semibold text-[rgba(76,166,38,1)]">
+                {interviewComplete ? 'Complete!' : `${answeredQuestions}/${totalQuestions} Questions`}
+              </span>
+            </div>
+            <div className="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-3 overflow-hidden">
+              <div 
+                className="h-full bg-gradient-to-r from-[rgba(76,166,38,1)] to-[rgba(76,166,38,0.8)] transition-all duration-500 ease-out rounded-full"
+                style={{ width: `${progressPercentage}%` }}
+              />
+            </div>
+            <div className="flex justify-between mt-2 text-xs text-gray-500 dark:text-gray-400">
+              <span className={answeredQuestions >= 0 ? 'text-[rgba(76,166,38,1)] font-semibold' : ''}>Start</span>
+              <span className={answeredQuestions >= 1 ? 'text-[rgba(76,166,38,1)] font-semibold' : ''}>Q1</span>
+              <span className={answeredQuestions >= 2 ? 'text-[rgba(76,166,38,1)] font-semibold' : ''}>Q2</span>
+              <span className={answeredQuestions >= 3 ? 'text-[rgba(76,166,38,1)] font-semibold' : ''}>Q3</span>
+              <span className={answeredQuestions >= 4 ? 'text-[rgba(76,166,38,1)] font-semibold' : ''}>Q4</span>
+              <span className={interviewComplete ? 'text-[rgba(76,166,38,1)] font-semibold' : ''}>Technical →</span>
+            </div>
+          </div>
+        )}
+
         {/* Main Content */}
         <div className="p-8">
           {!interviewStarted ? (
             <div className="text-center py-12">
+              {/* Not signed in warning */}
+              {!user && (
+                <div className="mb-6 p-4 bg-yellow-50 dark:bg-yellow-900/20 border border-yellow-200 dark:border-yellow-800 rounded-lg max-w-md mx-auto">
+                  <p className="text-sm text-yellow-800 dark:text-yellow-200">
+                    ⚠️ You&apos;re not signed in. Your session won&apos;t be saved. <button onClick={() => router.push('/login')} className="underline font-medium hover:text-yellow-900 dark:hover:text-yellow-100 cursor-pointer">Sign in</button> to save your progress and view results.
+                  </p>
+                </div>
+              )}
               <div className="mb-8">
                 <div className="w-24 h-24 bg-[rgba(76,166,38,0.1)] rounded-full flex items-center justify-center mx-auto mb-4">
                   <Mic className="w-12 h-12 text-[rgba(76,166,38,1)]" />
@@ -360,6 +553,7 @@ function LiveInterviewSessionContent() {
                   onClick={toggleMute}
                   className="p-4 bg-gray-200 dark:bg-gray-700 hover:bg-gray-300 dark:hover:bg-gray-600 rounded-full transition-all duration-200 cursor-pointer hover:scale-105"
                   title={isMuted ? 'Unmute AI Voice' : 'Mute AI Voice'}
+                  disabled={isComplete}
                 >
                   {isMuted ? (
                     <VolumeX className="w-6 h-6 text-gray-700 dark:text-gray-300" />
@@ -368,7 +562,7 @@ function LiveInterviewSessionContent() {
                   )}
                 </button>
 
-                {!isRecording && !isProcessing ? (
+                {!isRecording && !isProcessing && !isComplete ? (
                   <button
                     onClick={startListening}
                     className="p-6 bg-[rgba(76,166,38,1)] hover:bg-[rgba(76,166,38,0.9)] rounded-full transition-all duration-200 cursor-pointer hover:scale-105 shadow-lg"
@@ -376,7 +570,7 @@ function LiveInterviewSessionContent() {
                   >
                     <Mic className="w-8 h-8 text-white" />
                   </button>
-                ) : isRecording ? (
+                ) : isRecording && !isComplete ? (
                   <button
                     onClick={stopListening}
                     className="p-6 bg-red-500 hover:bg-red-600 rounded-full transition-all duration-200 cursor-pointer hover:scale-105 shadow-lg animate-pulse"
@@ -384,17 +578,46 @@ function LiveInterviewSessionContent() {
                   >
                     <MicOff className="w-8 h-8 text-white" />
                   </button>
-                ) : (
+                ) : isProcessing ? (
                   <div className="p-6 bg-gray-300 dark:bg-gray-700 rounded-full">
                     <div className="w-8 h-8 border-4 border-white border-t-transparent rounded-full animate-spin" />
                   </div>
-                )}
+                ) : null}
               </div>
 
               <div className="text-center text-sm text-gray-600 dark:text-gray-400">
-                {isRecording && 'Click the microphone to stop and submit your answer'}
-                {!isRecording && !isProcessing && 'Click the microphone to start answering'}
-                {isProcessing && 'Processing your response...'}
+                {isComplete ? (
+                  <div className="space-y-4">
+                    <p className="text-lg font-medium text-gray-900 dark:text-gray-100">
+                      Interview Complete!
+                    </p>
+                    {sessionId ? (
+                      <Button
+                        variant="primary"
+                        className="bg-[rgba(76,166,38,1)] hover:bg-[rgba(76,166,38,0.9)]"
+                        onClick={() => {
+                          // Pass fullInterview parameter to results page
+                          const resultsUrl = isFullInterview 
+                            ? `/interview/behavioral/results/${sessionId}?fullInterview=true`
+                            : `/interview/behavioral/results/${sessionId}`;
+                          router.push(resultsUrl);
+                        }}
+                      >
+                        View Results & Feedback
+                      </Button>
+                    ) : (
+                      <p className="text-yellow-600 dark:text-yellow-400">
+                        Sign in to save your results
+                      </p>
+                    )}
+                  </div>
+                ) : (
+                  <>
+                    {isRecording && 'Click the microphone to stop and submit your answer'}
+                    {!isRecording && !isProcessing && 'Click the microphone to start answering'}
+                    {isProcessing && 'Processing your response...'}
+                  </>
+                )}
               </div>
 
               {/* Messages History */}
@@ -422,6 +645,60 @@ function LiveInterviewSessionContent() {
                   ))}
                 </div>
               </div>
+
+              {/* Continue to Technical Round Button - Only show when interview is complete and in full interview mode */}
+              {interviewComplete && isFullInterview && (
+                <div className="mt-8 p-6 bg-gradient-to-br from-[rgba(76,166,38,0.1)] to-[rgba(76,166,38,0.05)] dark:from-[rgba(76,166,38,0.2)] dark:to-[rgba(76,166,38,0.1)] rounded-2xl border-2 border-[rgba(76,166,38,0.3)] dark:border-[rgba(76,166,38,0.4)] shadow-lg">
+                  <div className="text-center">
+                    <div className="mb-4">
+                      <div className="w-16 h-16 bg-gradient-to-br from-[rgba(76,166,38,1)] to-[rgba(76,166,38,0.8)] rounded-full flex items-center justify-center mx-auto shadow-lg">
+                        <svg 
+                          className="w-10 h-10 text-white" 
+                          fill="none" 
+                          stroke="currentColor" 
+                          viewBox="0 0 24 24"
+                        >
+                          <path 
+                            strokeLinecap="round" 
+                            strokeLinejoin="round" 
+                            strokeWidth={2.5} 
+                            d="M5 13l4 4L19 7" 
+                          />
+                        </svg>
+                      </div>
+                    </div>
+                    <h3 className="text-xl font-bold text-gray-900 dark:text-white mb-2">
+                      Behavioral Round Complete! 🎉
+                    </h3>
+                    <p className="text-gray-600 dark:text-gray-300 mb-6 text-sm">
+                      Great job! Ready to showcase your technical skills?
+                    </p>
+                    <button
+                      onClick={() => {
+                        sessionStorage.setItem('behavioralComplete', 'true');
+                        const urlParams = new URLSearchParams(window.location.search);
+                        router.push(`/interview/technical?${urlParams.toString()}`);
+                      }}
+                      className="bg-gradient-to-r from-[rgba(76,166,38,1)] to-[rgba(76,166,38,0.8)] hover:from-[rgba(76,166,38,0.9)] hover:to-[rgba(76,166,38,0.7)] text-white px-8 py-3 rounded-xl shadow-lg hover:shadow-xl transition-all duration-300 font-semibold inline-flex items-center gap-2 hover:scale-105"
+                    >
+                      Continue to Technical Round
+                      <svg 
+                        className="w-5 h-5" 
+                        fill="none" 
+                        stroke="currentColor" 
+                        viewBox="0 0 24 24"
+                      >
+                        <path 
+                          strokeLinecap="round" 
+                          strokeLinejoin="round" 
+                          strokeWidth={2} 
+                          d="M13 7l5 5m0 0l-5 5m5-5H6" 
+                        />
+                      </svg>
+                    </button>
+                  </div>
+                </div>
+              )}
 
               {/* End Interview Button */}
               <div className="flex justify-center mt-6">

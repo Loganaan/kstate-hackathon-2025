@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import SideButtons from "../components/SideButtons";
-import ThemeLogo from "../components/ThemeLogo";
+import Header from "../components/Header";
 import AuthButtons from "../components/AuthButtons";
 import "./globals.css";
 import { ThemeProvider } from "@/components/ThemeProvider";
@@ -40,15 +40,15 @@ export default function RootLayout({
           <AuthProvider>
             <SplashProvider>
               <SideButtons />
-              <div className="w-full flex justify-center mt-0 sticky top-0 z-50 py-3 bg-white dark:bg-gray-900 border-b border-gray-200 dark:border-gray-800 shadow-sm transition-colors">
-                <div className="flex-1 flex justify-center">
-                  <ThemeLogo />
-                </div>
-                <div className="absolute right-6">
-                  <AuthButtons />
+              <div className="sticky top-0 z-50 bg-white dark:bg-gray-900 border-b border-gray-200 dark:border-gray-800 shadow-sm transition-colors ml-24">
+                <div className="relative">
+                  <Header />
+                  <div className="absolute right-6 top-3">
+                    <AuthButtons />
+                  </div>
                 </div>
               </div>
-              <main>
+              <main className="ml-24">
                 {children}
               </main>
             </SplashProvider>

@@ -1,6 +1,8 @@
 'use client';
 
 import { useState, useEffect, useRef } from 'react';
+import { useRouter } from 'next/navigation';
+import { CheckCircle2 } from 'lucide-react';
 import SessionHeader from './components/SessionHeader';
 import ProblemPanel from './components/ProblemPanel';
 import CodeEditor from './components/CodeEditor';
@@ -83,7 +85,96 @@ interface QuestionResult {
   details?: string;
 }
 
+/**
+ * Determines the best question format based on company and role
+ * Returns 'coding', 'multiple-choice', or 'free-response'
+ */
+function determineQuestionFormat(company: string, role: string, jobDescription: string): string {
+  const companyLower = company.toLowerCase();
+  const roleLower = role.toLowerCase();
+  const descLower = jobDescription.toLowerCase();
+  
+  // Companies known for system design questions (for senior+ roles)
+  const systemDesignCompanies = [
+    'google', 'meta', 'facebook', 'amazon', 'microsoft', 'netflix', 'uber', 
+    'airbnb', 'linkedin', 'twitter', 'stripe', 'salesforce', 'oracle'
+  ];
+  
+  // Companies/roles known for leetcode-style coding
+  const leetcodeCompanies = [
+    'google', 'meta', 'facebook', 'amazon', 'apple', 'microsoft', 'netflix',
+    'adobe', 'nvidia', 'intel', 'twitter', 'snap', 'pinterest', 'reddit'
+  ];
+  
+  // Check if job description mentions specific interview types
+  const mentionsSystemDesign = descLower.includes('system design') || 
+                                descLower.includes('architecture') ||
+                                descLower.includes('scalability') ||
+                                descLower.includes('distributed systems');
+  
+  const mentionsAlgorithms = descLower.includes('algorithm') ||
+                             descLower.includes('data structure') ||
+                             descLower.includes('leetcode') ||
+                             descLower.includes('coding challenge');
+  
+  const isSenior = roleLower.includes('senior') || 
+                   roleLower.includes('lead') || 
+                   roleLower.includes('principal') ||
+                   roleLower.includes('staff') ||
+                   roleLower.includes('architect');
+  
+  // Decision logic
+  // 1. If explicitly mentioned in description, use that
+  if (mentionsSystemDesign && isSenior) {
+    return 'free-response'; // System design
+  }
+  
+  if (mentionsAlgorithms) {
+    return 'coding'; // Leetcode-style
+  }
+  
+  // 2. Check company patterns
+  const isSystemDesignCompany = systemDesignCompanies.some(c => companyLower.includes(c));
+  const isLeetcodeCompany = leetcodeCompanies.some(c => companyLower.includes(c));
+  
+  // Senior roles at FAANG-like companies often get system design
+  if (isSenior && isSystemDesignCompany) {
+    return 'free-response';
+  }
+  
+  // Most tech companies use leetcode-style for coding rounds
+  if (isLeetcodeCompany) {
+    return 'coding';
+  }
+  
+  // 3. Role-based defaults
+  if (roleLower.includes('frontend') || roleLower.includes('front-end')) {
+    return 'coding'; // Frontend usually gets coding challenges
+  }
+  
+  if (roleLower.includes('backend') || roleLower.includes('back-end')) {
+    return isSenior ? 'free-response' : 'coding';
+  }
+  
+  if (roleLower.includes('full stack') || roleLower.includes('fullstack')) {
+    return 'coding'; // Full stack usually coding
+  }
+  
+  if (roleLower.includes('architect') || roleLower.includes('engineering manager')) {
+    return 'free-response'; // System design for architects/managers
+  }
+  
+  // 4. Default to coding for most software engineering roles
+  return 'coding';
+}
+
 export default function TechnicalInterviewPage() {
+  const router = useRouter();
+  
+  // Full Interview Flow state
+  const [isFullInterview, setIsFullInterview] = useState(false);
+  const [showCompletionModal, setShowCompletionModal] = useState(false);
+  
   // API Integration state
   const [isSetupComplete, setIsSetupComplete] = useState(false);
   const [apiQuestions, setApiQuestions] = useState<ApiQuestion[]>([]);
@@ -261,6 +352,51 @@ export default function TechnicalInterviewPage() {
       }
     }
   }, [liveProctorMode]);
+
+  // Detect if this is part of a full interview flow
+  useEffect(() => {
+    const urlParams = new URLSearchParams(window.location.search);
+    const isFullInterviewMode = urlParams.get('fullInterview') === 'true';
+    setIsFullInterview(isFullInterviewMode);
+
+    if (isFullInterviewMode && !isSetupComplete) {
+      // Auto-setup with params from URL
+      const company = urlParams.get('company') || 'Tech Company';
+      const role = urlParams.get('role') || 'Software Engineer';
+      const seniority = urlParams.get('seniority') || 'mid';
+      const jobDescription = urlParams.get('jobDescription') || '';
+      
+      // Determine question format based on company
+      const questionFormat = determineQuestionFormat(company, role, jobDescription);
+      
+      handleSetupSubmit({
+        company,
+        role,
+        seniority,
+        difficulty: 'medium',
+        jobDescription,
+        count: 2, // Only 2 technical questions for full interview
+        format: questionFormat,
+      });
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  // Check if all technical questions are completed
+  useEffect(() => {
+    if (isFullInterview && apiQuestions.length > 0) {
+      // Check if we've reached the last question and all tests pass
+      const isLastQuestion = currentQuestionIndex === apiQuestions.length - 1;
+      const allTestsPassed = testResults.length > 0 && testResults.every(t => t.passed);
+      
+      if (isLastQuestion && allTestsPassed) {
+        // Wait a moment before showing completion
+        setTimeout(() => {
+          setShowCompletionModal(true);
+        }, 2000);
+      }
+    }
+  }, [isFullInterview, currentQuestionIndex, apiQuestions.length, testResults]);
 
   // Handle Run Code - Execute Python code against test cases
   const handleRunCode = async () => {
@@ -475,6 +611,14 @@ export default function TechnicalInterviewPage() {
     saveQuestionResult();
     // Show summary
     setIsInterviewComplete(true);
+    
+    // Update URL to mark as complete for progress bar
+    if (typeof window !== 'undefined') {
+      const currentParams = new URLSearchParams(window.location.search);
+      currentParams.set('complete', 'true');
+      const newUrl = `${window.location.pathname}?${currentParams.toString()}`;
+      window.history.replaceState({}, '', newUrl);
+    }
   };
 
   // Handle Restart Interview
@@ -486,6 +630,14 @@ export default function TechnicalInterviewPage() {
     setQuestionResults([]);
     resetQuestionState();
     setTimeElapsed(0);
+    
+    // Remove complete parameter from URL
+    if (typeof window !== 'undefined') {
+      const currentParams = new URLSearchParams(window.location.search);
+      currentParams.delete('complete');
+      const newUrl = `${window.location.pathname}?${currentParams.toString()}`;
+      window.history.replaceState({}, '', newUrl);
+    }
   };
 
   // Handle Exit to Dashboard
@@ -562,7 +714,7 @@ export default function TechnicalInterviewPage() {
 
   return (
     <div className="bg-gray-50 dark:bg-gray-950 min-h-screen">
-      <div className="pl-24 bg-gray-50 dark:bg-gray-950">
+      <div className="bg-gray-50 dark:bg-gray-950">
       {/* Header */}
       <SessionHeader
         title={currentProblem.title}
@@ -722,6 +874,64 @@ export default function TechnicalInterviewPage() {
         liveProctorMode={liveProctorMode}
       />
       </div>
+
+      {/* Completion Modal - Full Interview Flow */}
+      {showCompletionModal && (
+        <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+          <div className="bg-white dark:bg-gray-800 rounded-3xl shadow-2xl max-w-2xl w-full p-8">
+            <div className="text-center">
+              {/* Success Icon */}
+              <div className="mb-6">
+                <div className="w-24 h-24 bg-green-100 dark:bg-green-900/30 rounded-full flex items-center justify-center mx-auto">
+                  <CheckCircle2 className="w-16 h-16 text-green-600 dark:text-green-400" />
+                </div>
+              </div>
+
+              {/* Title */}
+              <h2 className="text-4xl font-bold text-gray-900 dark:text-white mb-4">
+                Congratulations! 🎉
+              </h2>
+
+              {/* Description */}
+              <p className="text-xl text-gray-600 dark:text-gray-300 mb-4">
+                You&apos;ve successfully completed the full interview process!
+              </p>
+              <p className="text-lg text-gray-500 dark:text-gray-400 mb-8">
+                Both behavioral and technical rounds are done. Head to your dashboard to review your performance.
+              </p>
+
+              {/* Stats */}
+              <div className="grid grid-cols-2 gap-4 mb-8">
+                <div className="bg-blue-50 dark:bg-blue-900/20 rounded-2xl p-4">
+                  <div className="text-3xl font-bold text-blue-600 dark:text-blue-400 mb-1">✓</div>
+                  <div className="text-sm text-gray-600 dark:text-gray-300">Behavioral Interview</div>
+                </div>
+                <div className="bg-purple-50 dark:bg-purple-900/20 rounded-2xl p-4">
+                  <div className="text-3xl font-bold text-purple-600 dark:text-purple-400 mb-1">✓</div>
+                  <div className="text-sm text-gray-600 dark:text-gray-300">Technical Interview</div>
+                </div>
+              </div>
+
+              {/* View Dashboard Button */}
+              <button
+                onClick={() => {
+                  // Clean up session storage
+                  sessionStorage.removeItem('fullInterviewParams');
+                  sessionStorage.removeItem('fullInterviewStage');
+                  sessionStorage.removeItem('behavioralSessionId');
+                  sessionStorage.removeItem('technicalSessionId');
+                  sessionStorage.removeItem('behavioralComplete');
+                  // Navigate to dashboard
+                  router.push('/dashboard');
+                }}
+                className="bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white px-10 py-4 text-lg rounded-2xl shadow-xl hover:shadow-2xl transition-all duration-300 font-semibold"
+              >
+                View Results Dashboard
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

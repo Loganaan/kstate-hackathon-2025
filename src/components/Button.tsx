@@ -1,3 +1,5 @@
+import React from 'react';
+
 // components/Button.tsx
 // Reusable button component with various styles and states.
 // Provides consistent button styling and interaction patterns.

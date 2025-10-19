@@ -123,6 +123,7 @@ export function useDeepgram({ onTranscript, onError, onFillerWord }: UseDeepgram
       onError?.(error instanceof Error ? error : new Error('Failed to start recording'));
       stopRecording();
     }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [onTranscript, onError, onFillerWord, detectFillerWords]);
 
   const stopRecording = useCallback(() => {
