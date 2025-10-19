@@ -2,10 +2,9 @@
 
 import { useRouter, useSearchParams } from 'next/navigation';
 import { useState, useEffect, useRef, Suspense } from 'react';
-import { Mic, MicOff, Volume2, VolumeX, X, AlertCircle } from 'lucide-react';
+import { Mic, MicOff, Volume2, VolumeX, X, AlertCircle, Bell, BellOff } from 'lucide-react';
 import Button from '@/components/Button';
 import { useDeepgram } from '@/hooks/useDeepgram';
-import FillerWordPopup from '@/components/FillerWordPopup';
 
 interface Message {
   id: string;
@@ -30,8 +29,8 @@ function LiveInterviewSessionContent() {
   const [interviewStarted, setInterviewStarted] = useState(false);
   const [currentQuestion, setCurrentQuestion] = useState('');
   const [transcript, setTranscript] = useState('');
-  const [fillerWordDetected, setFillerWordDetected] = useState<string | null>(null);
   const [fillerWordCount, setFillerWordCount] = useState(0);
+  const [fillerWordDetectionEnabled, setFillerWordDetectionEnabled] = useState(false);
   
   const audioRef = useRef<HTMLAudioElement | null>(null);
 
@@ -44,9 +43,11 @@ function LiveInterviewSessionContent() {
       console.error('Deepgram error:', error);
     },
     onFillerWord: (word) => {
-      console.log('Filler word detected:', word);
-      setFillerWordDetected(word);
-      setFillerWordCount(prev => prev + 1);
+      // Only count filler words if detection is enabled
+      if (fillerWordDetectionEnabled) {
+        console.log('Filler word detected:', word);
+        setFillerWordCount(prev => prev + 1);
+      }
     },
   });
 
@@ -239,14 +240,6 @@ function LiveInterviewSessionContent() {
 
   return (
     <div className="min-h-screen bg-gray-50 dark:bg-gray-950 flex items-center justify-center p-4 pl-20">
-      {/* Filler Word Popup */}
-      {fillerWordDetected && (
-        <FillerWordPopup
-          word={fillerWordDetected}
-          onClose={() => setFillerWordDetected(null)}
-        />
-      )}
-      
       <div className="max-w-4xl w-full bg-white dark:bg-gray-900 rounded-2xl shadow-2xl overflow-hidden">
         {/* Header */}
         <div className="bg-gradient-to-r from-[rgba(76,166,38,1)] to-[rgba(76,166,38,0.8)] p-6 text-white">
@@ -261,15 +254,22 @@ function LiveInterviewSessionContent() {
               </p>
             </div>
             
-            {/* Filler Word Counter */}
+            {/* Filler Word Detection Toggle */}
             {interviewStarted && (
-              <div className="flex items-center gap-2 bg-white/20 px-4 py-2 rounded-lg mr-4">
-                <AlertCircle className="w-5 h-5" />
-                <div className="text-center">
-                  <p className="text-xs opacity-80">Filler Words</p>
-                  <p className="text-lg font-bold">{fillerWordCount}</p>
-                </div>
-              </div>
+              <button
+                onClick={() => setFillerWordDetectionEnabled(!fillerWordDetectionEnabled)}
+                className="flex items-center gap-2 bg-white/20 hover:bg-white/30 px-4 py-2 rounded-lg mr-4 transition-all duration-200"
+                title={fillerWordDetectionEnabled ? 'Disable Filler Word Detection' : 'Enable Filler Word Detection'}
+              >
+                {fillerWordDetectionEnabled ? (
+                  <Bell className="w-5 h-5" />
+                ) : (
+                  <BellOff className="w-5 h-5" />
+                )}
+                <span className="text-xs font-medium">
+                  {fillerWordDetectionEnabled ? 'On' : 'Off'}
+                </span>
+              </button>
             )}
             
             <button
@@ -326,6 +326,31 @@ function LiveInterviewSessionContent() {
                   <p className="text-gray-700 dark:text-gray-300">
                     {transcript || 'Listening...'}
                   </p>
+                </div>
+              )}
+
+              {/* Filler Word Counter */}
+              {fillerWordDetectionEnabled && (
+                <div className="bg-yellow-50 dark:bg-yellow-900/20 rounded-xl p-4 border border-yellow-200 dark:border-yellow-800">
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-3">
+                      <div className="bg-yellow-500/20 rounded-full p-2">
+                        <AlertCircle className="w-5 h-5 text-yellow-600 dark:text-yellow-400" />
+                      </div>
+                      <div>
+                        <h3 className="text-sm font-medium text-yellow-900 dark:text-yellow-300">
+                          Filler Words Detected
+                        </h3>
+                        <p className="text-xs text-yellow-700 dark:text-yellow-400 opacity-80">
+                          Try to minimize usage for better delivery
+                        </p>
+                      </div>
+                    </div>
+                    <div className="text-center bg-yellow-100 dark:bg-yellow-900/30 px-4 py-2 rounded-lg">
+                      <p className="text-xs font-medium text-yellow-700 dark:text-yellow-400 mb-1">Count</p>
+                      <p className="text-2xl font-bold text-yellow-900 dark:text-yellow-300">{fillerWordCount}</p>
+                    </div>
+                  </div>
                 </div>
               )}
 
