@@ -38,29 +38,15 @@ export default function LoginPage() {
   }
 
   return (
-    <div className="flex items-center justify-center min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 dark:from-gray-900 dark:to-gray-800">
+    <div className="pt-32 flex items-start justify-center min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 dark:from-gray-900 dark:to-gray-800">
       <div className="max-w-md w-full space-y-8 p-8 bg-white dark:bg-gray-800 rounded-2xl shadow-2xl mx-4">
         <div>
-          <div className="flex justify-center mb-6 h-16 relative">
-            <Image 
-              src="/images/TechReady.png" 
-              alt="TechReady Logo" 
-              width={192}
-              height={64}
-              className="dark:hidden"
-            />
-            <Image 
-              src="/images/TechReady_light.png" 
-              alt="TechReady Logo" 
-              width={192}
-              height={64}
-              className="hidden dark:block"
-            />
+          <div className="flex justify-center h-4 relative">
           </div>
-          <h2 className="mt-6 text-center text-3xl font-extrabold text-gray-900 dark:text-white">
+          <h2 className="text-center text-3xl font-extrabold text-gray-900 dark:text-white">
             Welcome to Interview Prep AI
           </h2>
-          <p className="mt-2 text-center text-sm text-gray-600 dark:text-gray-400">
+          <p className="mt-4 text-center text-sm text-gray-600 dark:text-gray-400">
             Sign in to start practicing your interview skills with AI-powered coaching
           </p>
         </div>
