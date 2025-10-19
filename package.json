@@ -9,6 +9,7 @@
     "lint": "eslint"
   },
   "dependencies": {
+    "@deepgram/sdk": "^4.11.2",
     "@elevenlabs/elevenlabs-js": "^2.19.0",
     "@google/genai": "^1.25.0",
     "@google/generative-ai": "^0.24.1",
