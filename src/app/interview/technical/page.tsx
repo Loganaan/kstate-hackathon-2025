@@ -590,7 +590,7 @@ export default function TechnicalInterviewPage() {
               <button
                 onClick={handlePreviousQuestion}
                 disabled={currentQuestionIndex === 0}
-                className="px-4 py-2 bg-gray-200 dark:bg-gray-800 text-gray-700 dark:text-gray-300 rounded-md hover:bg-gray-300 dark:hover:bg-gray-700 disabled:opacity-50 disabled:cursor-not-allowed font-medium"
+                className="px-4 py-2 bg-gray-200 dark:bg-gray-800 text-gray-700 dark:text-gray-300 rounded-md hover:bg-gray-300 dark:hover:bg-gray-700 disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer font-medium transition-all duration-200 hover:shadow-md hover:scale-105 disabled:hover:scale-100 disabled:hover:shadow-none"
               >
                 ← Previous
               </button>

@@ -273,7 +273,7 @@ ${aiSummary ? `\nAI FEEDBACK\n-----------\n${aiSummary}` : ''}
             <button
               onClick={generateAISummary}
               disabled={generatingReport}
-              className="w-full py-3 px-6 bg-blue-600 text-white rounded-lg font-semibold hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors flex items-center justify-center gap-2"
+              className="w-full py-3 px-6 bg-green-600 text-white rounded-lg font-semibold hover:bg-green-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors flex items-center justify-center gap-2"
             >
               {generatingReport ? (
                 <>
@@ -313,7 +313,7 @@ ${aiSummary ? `\nAI FEEDBACK\n-----------\n${aiSummary}` : ''}
           </button>
           <button
             onClick={onExit}
-            className="flex-1 py-3 px-6 bg-blue-600 text-white rounded-lg font-semibold hover:bg-blue-700 transition-colors"
+            className="flex-1 py-3 px-6 bg-green-600 text-white rounded-lg font-semibold hover:bg-green-700 transition-colors"
           >
             Return to Dashboard
           </button>

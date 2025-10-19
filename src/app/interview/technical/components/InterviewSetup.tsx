@@ -66,7 +66,7 @@ export default function InterviewSetup({ onSubmit, loading, error }: InterviewSe
                   onChange={(e) => setCompany(e.target.value)}
                   required
                   placeholder="e.g., Google, Meta, Amazon"
-                  className="w-full px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:text-white"
+                  className="w-full px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-[rgba(76,166,38,1)] dark:bg-gray-700 text-black dark:text-white"
                 />
               </div>
 
@@ -80,7 +80,7 @@ export default function InterviewSetup({ onSubmit, loading, error }: InterviewSe
                   onChange={(e) => setRole(e.target.value)}
                   required
                   placeholder="e.g., Software Engineer, SDE"
-                  className="w-full px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:text-white"
+                  className="w-full px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-[rgba(76,166,38,1)] dark:bg-gray-700 text-black dark:text-white"
                 />
               </div>
             </div>
@@ -94,7 +94,7 @@ export default function InterviewSetup({ onSubmit, loading, error }: InterviewSe
                 <select
                   value={seniority}
                   onChange={(e) => setSeniority(e.target.value)}
-                  className="w-full px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:text-white"
+                  className="w-full px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-[rgba(76,166,38,1)] dark:bg-gray-700 text-black dark:text-white"
                 >
                   <option value="intern">Intern</option>
                   <option value="junior">Junior</option>
@@ -110,7 +110,7 @@ export default function InterviewSetup({ onSubmit, loading, error }: InterviewSe
                 <select
                   value={difficulty}
                   onChange={(e) => setDifficulty(e.target.value)}
-                  className="w-full px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:text-white"
+                  className="w-full px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-[rgba(76,166,38,1)] dark:bg-gray-700 text-black dark:text-white"
                 >
                   <option value="easy">Easy</option>
                   <option value="medium">Medium</option>
@@ -128,7 +128,7 @@ export default function InterviewSetup({ onSubmit, loading, error }: InterviewSe
                   max="10"
                   value={count}
                   onChange={(e) => setCount(parseInt(e.target.value))}
-                  className="w-full px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:text-white"
+                  className="w-full px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-[rgba(76,166,38,1)] dark:bg-gray-700 text-black dark:text-white"
                 />
               </div>
             </div>
@@ -141,7 +141,7 @@ export default function InterviewSetup({ onSubmit, loading, error }: InterviewSe
               <select
                 value={format}
                 onChange={(e) => setFormat(e.target.value)}
-                className="w-full px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:text-white"
+                className="w-full px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-[rgba(76,166,38,1)] dark:bg-gray-700 text-black dark:text-white"
               >
                 <option value="coding">Coding Only</option>
                 <option value="multiple-choice">Multiple Choice Only</option>
@@ -162,7 +162,7 @@ export default function InterviewSetup({ onSubmit, loading, error }: InterviewSe
                 rows={5}
                 minLength={50}
                 placeholder="Describe the role, required skills, and technical areas to focus on..."
-                className="w-full px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:text-white resize-none"
+                className="w-full px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-[rgba(76,166,38,1)] dark:bg-gray-700 text-black dark:text-white resize-none"
               />
               <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">
                 Minimum 50 characters. Be specific about technologies and skills.
@@ -181,7 +181,7 @@ export default function InterviewSetup({ onSubmit, loading, error }: InterviewSe
             <button
               type="submit"
               disabled={loading}
-              className="w-full bg-[rgba(76,166,38,1)] hover:bg-[rgba(76,166,38,0.9)] text-white font-semibold py-3 px-6 rounded-lg disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200 shadow-md hover:shadow-lg"
+              className="w-full bg-[rgba(76,166,38,1)] hover:bg-[rgba(76,166,38,0.9)] text-white font-semibold py-3 px-6 rounded-lg disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer transition-all duration-200 shadow-md hover:shadow-lg hover:scale-105"
             >
               {loading ? (
                 <span className="flex items-center justify-center gap-2">
