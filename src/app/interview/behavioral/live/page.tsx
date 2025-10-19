@@ -29,10 +29,15 @@ function LiveInterviewSessionContent() {
   const [interviewStarted, setInterviewStarted] = useState(false);
   const [currentQuestion, setCurrentQuestion] = useState('');
   const [transcript, setTranscript] = useState('');
+  const [interviewComplete, setInterviewComplete] = useState(false);
+  const [totalQuestions] = useState(4); // Behavioral interview has 4 questions
   
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const recognitionRef = useRef<any>(null);
   const audioRef = useRef<HTMLAudioElement | null>(null);
+
+  // Check if this is part of a full interview flow
+  const isFullInterview = searchParams.get('fullInterview') === 'true';
 
   // Get session params from URL
   const sessionParams: SessionParams = {
@@ -41,6 +46,10 @@ function LiveInterviewSessionContent() {
     seniority: searchParams.get('seniority') || undefined,
     jobDescription: searchParams.get('jobDescription') || undefined,
   };
+
+  // Calculate current progress (count user messages as answered questions)
+  const answeredQuestions = messages.filter(m => m.role === 'user').length;
+  const progressPercentage = interviewComplete ? 100 : (answeredQuestions / totalQuestions) * 100;
 
   // Initialize speech recognition
   useEffect(() => {
@@ -225,6 +234,7 @@ function LiveInterviewSessionContent() {
 
       const data = await response.json();
       const aiResponse = data.response || 'Thank you for sharing that.';
+      const isInterviewComplete = data.interviewComplete || false;
 
       const aiMessage: Message = {
         id: (Date.now() + 1).toString(),
@@ -236,14 +246,29 @@ function LiveInterviewSessionContent() {
       setMessages(prev => [...prev, aiMessage]);
       setCurrentQuestion(aiResponse);
 
-      // Speak the AI response
-      await speakText(aiResponse);
-
-      // Start listening again for next answer
-      setTimeout(() => {
-        setTranscript('');
-        startListening();
-      }, 500);
+      // Only speak the AI response if it's NOT the final summary
+      if (!isInterviewComplete) {
+        await speakText(aiResponse);
+        
+        // Start listening again for next answer
+        setTimeout(() => {
+          setTranscript('');
+          startListening();
+        }, 500);
+      } else {
+        // Interview is complete - show the summary text but don't speak it
+        console.log('Interview complete - displaying summary without voice');
+        
+        // Stop recording and audio
+        if (recognitionRef.current) {
+          recognitionRef.current.stop();
+        }
+        if (audioRef.current) {
+          audioRef.current.pause();
+        }
+        setIsRecording(false);
+        setInterviewComplete(true);
+      }
     } catch (error) {
       console.error('Error processing response:', error);
     } finally {
@@ -294,6 +319,34 @@ function LiveInterviewSessionContent() {
             </button>
           </div>
         </div>
+
+        {/* Progress Bar - Only show in full interview mode */}
+        {isFullInterview && interviewStarted && (
+          <div className="bg-white dark:bg-gray-900 px-6 py-4 border-b border-gray-200 dark:border-gray-800">
+            <div className="flex items-center justify-between mb-2">
+              <span className="text-sm font-medium text-gray-700 dark:text-gray-300">
+                Behavioral Interview Progress
+              </span>
+              <span className="text-sm font-semibold text-[rgba(76,166,38,1)]">
+                {interviewComplete ? 'Complete!' : `${answeredQuestions}/${totalQuestions} Questions`}
+              </span>
+            </div>
+            <div className="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-3 overflow-hidden">
+              <div 
+                className="h-full bg-gradient-to-r from-[rgba(76,166,38,1)] to-[rgba(76,166,38,0.8)] transition-all duration-500 ease-out rounded-full"
+                style={{ width: `${progressPercentage}%` }}
+              />
+            </div>
+            <div className="flex justify-between mt-2 text-xs text-gray-500 dark:text-gray-400">
+              <span className={answeredQuestions >= 0 ? 'text-[rgba(76,166,38,1)] font-semibold' : ''}>Start</span>
+              <span className={answeredQuestions >= 1 ? 'text-[rgba(76,166,38,1)] font-semibold' : ''}>Q1</span>
+              <span className={answeredQuestions >= 2 ? 'text-[rgba(76,166,38,1)] font-semibold' : ''}>Q2</span>
+              <span className={answeredQuestions >= 3 ? 'text-[rgba(76,166,38,1)] font-semibold' : ''}>Q3</span>
+              <span className={answeredQuestions >= 4 ? 'text-[rgba(76,166,38,1)] font-semibold' : ''}>Q4</span>
+              <span className={interviewComplete ? 'text-[rgba(76,166,38,1)] font-semibold' : ''}>Technical →</span>
+            </div>
+          </div>
+        )}
 
         {/* Main Content */}
         <div className="p-8">
@@ -411,6 +464,60 @@ function LiveInterviewSessionContent() {
                   ))}
                 </div>
               </div>
+
+              {/* Continue to Technical Round Button - Only show when interview is complete and in full interview mode */}
+              {interviewComplete && isFullInterview && (
+                <div className="mt-8 p-6 bg-gradient-to-br from-[rgba(76,166,38,0.1)] to-[rgba(76,166,38,0.05)] dark:from-[rgba(76,166,38,0.2)] dark:to-[rgba(76,166,38,0.1)] rounded-2xl border-2 border-[rgba(76,166,38,0.3)] dark:border-[rgba(76,166,38,0.4)] shadow-lg">
+                  <div className="text-center">
+                    <div className="mb-4">
+                      <div className="w-16 h-16 bg-gradient-to-br from-[rgba(76,166,38,1)] to-[rgba(76,166,38,0.8)] rounded-full flex items-center justify-center mx-auto shadow-lg">
+                        <svg 
+                          className="w-10 h-10 text-white" 
+                          fill="none" 
+                          stroke="currentColor" 
+                          viewBox="0 0 24 24"
+                        >
+                          <path 
+                            strokeLinecap="round" 
+                            strokeLinejoin="round" 
+                            strokeWidth={2.5} 
+                            d="M5 13l4 4L19 7" 
+                          />
+                        </svg>
+                      </div>
+                    </div>
+                    <h3 className="text-xl font-bold text-gray-900 dark:text-white mb-2">
+                      Behavioral Round Complete! 🎉
+                    </h3>
+                    <p className="text-gray-600 dark:text-gray-300 mb-6 text-sm">
+                      Great job! Ready to showcase your technical skills?
+                    </p>
+                    <button
+                      onClick={() => {
+                        sessionStorage.setItem('behavioralComplete', 'true');
+                        const urlParams = new URLSearchParams(window.location.search);
+                        router.push(`/interview/technical?${urlParams.toString()}`);
+                      }}
+                      className="bg-gradient-to-r from-[rgba(76,166,38,1)] to-[rgba(76,166,38,0.8)] hover:from-[rgba(76,166,38,0.9)] hover:to-[rgba(76,166,38,0.7)] text-white px-8 py-3 rounded-xl shadow-lg hover:shadow-xl transition-all duration-300 font-semibold inline-flex items-center gap-2 hover:scale-105"
+                    >
+                      Continue to Technical Round
+                      <svg 
+                        className="w-5 h-5" 
+                        fill="none" 
+                        stroke="currentColor" 
+                        viewBox="0 0 24 24"
+                      >
+                        <path 
+                          strokeLinecap="round" 
+                          strokeLinejoin="round" 
+                          strokeWidth={2} 
+                          d="M13 7l5 5m0 0l-5 5m5-5H6" 
+                        />
+                      </svg>
+                    </button>
+                  </div>
+                </div>
+              )}
 
               {/* End Interview Button */}
               <div className="flex justify-center mt-6">
