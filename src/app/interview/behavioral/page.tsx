@@ -396,10 +396,30 @@ function BehavioralInterviewContent() {
     }
   };
 
-  const deleteSession = (sessionId: string) => {
+  const deleteSession = async (sessionId: string) => {
+    const session = sessions.find(s => s.id === sessionId);
+    
+    // Delete from Firebase if it has a firebaseId
+    if (session?.firebaseId) {
+      try {
+        await firebaseUtils.deleteChatSession(session.firebaseId);
+      } catch (error) {
+        console.error('Error deleting session from Firebase:', error);
+        // Continue with local deletion even if Firebase deletion fails
+      }
+    }
+    
+    // Remove from local state
     setSessions(sessions.filter(s => s.id !== sessionId));
-    if (activeSessionId === sessionId && sessions.length > 1) {
-      setActiveSessionId(sessions[0].id);
+    
+    // If deleting the active session, switch to another one
+    if (activeSessionId === sessionId) {
+      const remainingSessions = sessions.filter(s => s.id !== sessionId);
+      if (remainingSessions.length > 0) {
+        setActiveSessionId(remainingSessions[0].id);
+      } else {
+        setActiveSessionId('');
+      }
     }
   };
 
