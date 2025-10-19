@@ -10,11 +10,20 @@ function HeaderContent() {
   
   // Check if this is part of a full interview flow
   const isFullInterview = searchParams.get('fullInterview') === 'true';
+  const isComplete = searchParams.get('complete') === 'true';
   
   // Determine current stage and progress
   const { stage, totalProgress } = useMemo(() => {
     if (!isFullInterview) {
       return { stage: null, totalProgress: 0 };
+    }
+
+    // If explicitly marked as complete
+    if (isComplete) {
+      return {
+        stage: 'Interview Complete!',
+        totalProgress: 100
+      };
     }
 
     // Behavioral interview - 4 questions (checkpoint at 33.33%)
@@ -34,7 +43,7 @@ function HeaderContent() {
     }
 
     return { stage: null, totalProgress: 0 };
-  }, [isFullInterview, pathname]);
+  }, [isFullInterview, isComplete, pathname]);
 
   // Determine which checkpoints are completed
   // Checkpoints at: Start (0%), Behavioral (33.33%), Technical (66.66%), Complete (100%)

@@ -611,6 +611,14 @@ export default function TechnicalInterviewPage() {
     saveQuestionResult();
     // Show summary
     setIsInterviewComplete(true);
+    
+    // Update URL to mark as complete for progress bar
+    if (typeof window !== 'undefined') {
+      const currentParams = new URLSearchParams(window.location.search);
+      currentParams.set('complete', 'true');
+      const newUrl = `${window.location.pathname}?${currentParams.toString()}`;
+      window.history.replaceState({}, '', newUrl);
+    }
   };
 
   // Handle Restart Interview
@@ -622,6 +630,14 @@ export default function TechnicalInterviewPage() {
     setQuestionResults([]);
     resetQuestionState();
     setTimeElapsed(0);
+    
+    // Remove complete parameter from URL
+    if (typeof window !== 'undefined') {
+      const currentParams = new URLSearchParams(window.location.search);
+      currentParams.delete('complete');
+      const newUrl = `${window.location.pathname}?${currentParams.toString()}`;
+      window.history.replaceState({}, '', newUrl);
+    }
   };
 
   // Handle Exit to Dashboard
