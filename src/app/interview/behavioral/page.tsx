@@ -18,6 +18,7 @@ interface Message {
   role: 'user' | 'assistant';
   content: string;
   timestamp: Date;
+  isCompletion?: boolean;
 }
 
 interface ChatSession {
@@ -29,6 +30,7 @@ interface ChatSession {
   messageCount: number;
   messages: Message[];
   params?: SessionParams;
+  isComplete?: boolean;
 }
 
 function BehavioralInterviewContent() {
@@ -52,24 +54,40 @@ function BehavioralInterviewContent() {
       
       try {
         const firebaseSessions = await firebaseUtils.getChatSessions(user.uid, 'behavioral');
-        const convertedSessions: ChatSession[] = firebaseSessions.map(session => ({
-          id: session.id,
-          firebaseId: session.id,
-          title: session.title,
-          lastMessage: session.lastMessage,
-          timestamp: session.timestamp.toDate(),
-          messageCount: session.messageCount,
-          messages: session.messages.map(msg => ({
+        const convertedSessions: ChatSession[] = firebaseSessions.map(session => {
+          const sessionMessages: Message[] = session.messages.map(msg => ({
             ...msg,
-            timestamp: msg.timestamp.toDate()
-          })),
-          params: session.params ? {
-            company: session.params.company || '',
-            role: session.params.role || '',
-            seniority: session.params.seniority || '',
-            jobDescription: session.params.jobDescription || ''
-          } : undefined
-        }));
+            timestamp: msg.timestamp.toDate(),
+            isCompletion: false
+          }));
+
+          // Detect if session is complete by checking if last message is the completion message
+          const lastMessage = sessionMessages[sessionMessages.length - 1];
+          const isComplete = lastMessage?.role === 'assistant' && 
+                            lastMessage?.content.includes('Congratulations on completing the behavioral interview');
+          
+          // If complete, mark the last message with isCompletion flag
+          if (isComplete && lastMessage) {
+            lastMessage.isCompletion = true;
+          }
+
+          return {
+            id: session.id,
+            firebaseId: session.id,
+            title: session.title,
+            lastMessage: session.lastMessage,
+            timestamp: session.timestamp.toDate(),
+            messageCount: session.messageCount,
+            messages: sessionMessages,
+            params: session.params ? {
+              company: session.params.company || '',
+              role: session.params.role || '',
+              seniority: session.params.seniority || '',
+              jobDescription: session.params.jobDescription || ''
+            } : undefined,
+            isComplete
+          };
+        });
         setSessions(convertedSessions);
       } catch (error) {
         console.error('Error loading sessions from Firebase:', error);
@@ -298,7 +316,19 @@ function BehavioralInterviewContent() {
         role: 'assistant',
         content: data.response || 'I apologize, but I encountered an error. Could you please try again?',
         timestamp: new Date(),
+        isCompletion: data.interviewComplete || false,
       };
+
+      // If interview is complete, mark the session as complete
+      if (data.interviewComplete && currentSession) {
+        setSessions(prevSessions => 
+          prevSessions.map(session => 
+            session.id === activeSessionId
+              ? { ...session, isComplete: true }
+              : session
+          )
+        );
+      }
 
       // Save both user and assistant messages to Firebase only if user is logged in
       if (user && currentSession?.firebaseId) {
@@ -438,10 +468,30 @@ function BehavioralInterviewContent() {
     }
   };
 
-  const deleteSession = (sessionId: string) => {
+  const deleteSession = async (sessionId: string) => {
+    const session = sessions.find(s => s.id === sessionId);
+    
+    // Delete from Firebase if it has a firebaseId
+    if (session?.firebaseId) {
+      try {
+        await firebaseUtils.deleteChatSession(session.firebaseId);
+      } catch (error) {
+        console.error('Error deleting session from Firebase:', error);
+        // Continue with local deletion even if Firebase deletion fails
+      }
+    }
+    
+    // Remove from local state
     setSessions(sessions.filter(s => s.id !== sessionId));
-    if (activeSessionId === sessionId && sessions.length > 1) {
-      setActiveSessionId(sessions[0].id);
+    
+    // If deleting the active session, switch to another one
+    if (activeSessionId === sessionId) {
+      const remainingSessions = sessions.filter(s => s.id !== sessionId);
+      if (remainingSessions.length > 0) {
+        setActiveSessionId(remainingSessions[0].id);
+      } else {
+        setActiveSessionId('');
+      }
     }
   };
 
@@ -470,7 +520,39 @@ function BehavioralInterviewContent() {
             <Button
               variant="secondary"
               className="w-full flex items-center justify-center gap-2 border-[rgba(76,166,38,1)] text-[rgba(76,166,38,1)] hover:bg-[rgba(76,166,38,0.1)]"
-              onClick={() => setShowLiveModal(true)}
+              onClick={() => {
+                // If in full interview mode, bypass modal and auto-pass parameters
+                if (isFullInterview) {
+                  const fullInterviewParamsStr = sessionStorage.getItem('fullInterviewParams');
+                  let params: SessionParams | undefined = undefined;
+                  
+                  if (fullInterviewParamsStr) {
+                    try {
+                      const fullInterviewParams = JSON.parse(fullInterviewParamsStr);
+                      params = {
+                        company: fullInterviewParams.company || '',
+                        role: fullInterviewParams.role || '',
+                        seniority: fullInterviewParams.seniority || '',
+                        jobDescription: fullInterviewParams.jobDescription || ''
+                      };
+                    } catch (e) {
+                      console.error('Error parsing full interview params:', e);
+                    }
+                  }
+                  
+                  // Navigate directly to live practice with stored params
+                  const searchParams = new URLSearchParams();
+                  searchParams.append('fullInterview', 'true'); // Include full interview flag for progress bar
+                  if (params?.company) searchParams.append('company', params.company);
+                  if (params?.role) searchParams.append('role', params.role);
+                  if (params?.seniority) searchParams.append('seniority', params.seniority);
+                  if (params?.jobDescription) searchParams.append('jobDescription', params.jobDescription);
+                  router.push(`/interview/behavioral/live?${searchParams.toString()}`);
+                } else {
+                  // Normal mode: show modal for manual input
+                  setShowLiveModal(true);
+                }
+              }}
             >
               <Video className="w-5 h-5" />
               Start Live Practice
@@ -568,6 +650,8 @@ function BehavioralInterviewContent() {
                     role={message.role}
                     content={message.content}
                     timestamp={message.timestamp}
+                    isCompletion={message.isCompletion}
+                    sessionId={currentSession?.firebaseId || currentSession?.id}
                   />
                 ))}
                 {isLoading && (
@@ -591,7 +675,7 @@ function BehavioralInterviewContent() {
             value={inputMessage}
             onChange={setInputMessage}
             onSend={handleSendMessage}
-            disabled={isLoading || !currentSession}
+            disabled={isLoading || !currentSession || currentSession.isComplete}
           />
         </div>
       </div>
@@ -601,39 +685,19 @@ function BehavioralInterviewContent() {
       <LivePracticeModal
         isOpen={showLiveModal}
         onClose={() => setShowLiveModal(false)}
-        onStart={() => {
+        onStart={(params) => {
           setShowLiveModal(false);
-          // Navigate to live practice session with current session params or full interview params
-          const params = new URLSearchParams();
-          
-          // First, try to get params from current session
-          if (currentSession?.params) {
-            if (currentSession.params.company) params.append('company', currentSession.params.company);
-            if (currentSession.params.role) params.append('role', currentSession.params.role);
-            if (currentSession.params.seniority) params.append('seniority', currentSession.params.seniority);
-            if (currentSession.params.jobDescription) params.append('jobDescription', currentSession.params.jobDescription);
-          } else {
-            // If no current session params, check for full interview params in sessionStorage
-            const fullInterviewParamsStr = sessionStorage.getItem('fullInterviewParams');
-            if (fullInterviewParamsStr) {
-              try {
-                const fullInterviewParams = JSON.parse(fullInterviewParamsStr);
-                if (fullInterviewParams.company) params.append('company', fullInterviewParams.company);
-                if (fullInterviewParams.role) params.append('role', fullInterviewParams.role);
-                if (fullInterviewParams.seniority) params.append('seniority', fullInterviewParams.seniority);
-                if (fullInterviewParams.jobDescription) params.append('jobDescription', fullInterviewParams.jobDescription);
-              } catch (e) {
-                console.error('Error parsing full interview params:', e);
-              }
-            }
-          }
-          
-          // Pass through fullInterview flag if we're in full interview mode
+          // Navigate to live practice session with params
+          const searchParams = new URLSearchParams();
+          // Pass fullInterview flag if we're in full interview mode
           if (isFullInterview) {
-            params.append('fullInterview', 'true');
+            searchParams.append('fullInterview', 'true');
           }
-          
-          router.push(`/interview/behavioral/live?${params.toString()}`);
+          if (params?.company) searchParams.append('company', params.company);
+          if (params?.role) searchParams.append('role', params.role);
+          if (params?.seniority) searchParams.append('seniority', params.seniority);
+          if (params?.jobDescription) searchParams.append('jobDescription', params.jobDescription);
+          router.push(`/interview/behavioral/live?${searchParams.toString()}`);
         }}
       />
 
