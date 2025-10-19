@@ -54,7 +54,7 @@ export default function SessionCard({
             e.stopPropagation();
             onDelete(id);
           }}
-          className="text-gray-400 hover:text-red-500 dark:hover:text-red-400 ml-2"
+          className="text-gray-400 hover:text-red-500 dark:hover:text-red-400 ml-2 transition-all duration-200 cursor-pointer hover:scale-110"
         >
           <Trash2 className="w-4 h-4" />
         </button>

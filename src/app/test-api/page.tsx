@@ -240,7 +240,7 @@ export default function TestAPIPage() {
                 <button
                   onClick={handleGenerateQuestions}
                   disabled={loading}
-                  className="w-full bg-blue-600 text-white py-2 px-4 rounded-md hover:bg-blue-700 disabled:bg-gray-400 disabled:cursor-not-allowed font-medium"
+                  className="w-full bg-[rgba(76,166,38,1)] hover:bg-[rgba(76,166,38,0.9)] text-white py-2 px-4 rounded-md disabled:bg-gray-400 disabled:cursor-not-allowed cursor-pointer font-medium transition-all duration-200 hover:shadow-lg hover:scale-105 disabled:hover:scale-100 disabled:hover:shadow-none"
                 >
                   {loading ? 'Generating...' : 'Generate Questions'}
                 </button>
@@ -339,7 +339,7 @@ export default function TestAPIPage() {
                 <button
                   onClick={handleQueryQuestions}
                   disabled={loading}
-                  className="w-full bg-green-600 text-white py-2 px-4 rounded-md hover:bg-green-700 disabled:bg-gray-400 disabled:cursor-not-allowed font-medium"
+                  className="w-full bg-green-600 text-white py-2 px-4 rounded-md hover:bg-green-700 disabled:bg-gray-400 disabled:cursor-not-allowed cursor-pointer font-medium transition-all duration-200 hover:shadow-lg hover:scale-105 disabled:hover:scale-100 disabled:hover:shadow-none"
                 >
                   {loading ? 'Querying...' : 'Query Questions'}
                 </button>
@@ -374,7 +374,7 @@ export default function TestAPIPage() {
                       <button
                         key={q.id}
                         onClick={() => setSelectedQuestion(q)}
-                        className={`px-4 py-2 rounded-md font-medium ${
+                        className={`px-4 py-2 rounded-md font-medium cursor-pointer transition-all duration-200 hover:shadow-md hover:scale-105 ${
                           selectedQuestion?.id === q.id
                             ? 'bg-blue-600 text-white'
                             : 'bg-gray-200 text-gray-700 hover:bg-gray-300'

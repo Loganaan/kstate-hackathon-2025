@@ -448,7 +448,7 @@ function BehavioralInterviewContent() {
             {!user && (
               <div className="mt-3 p-3 bg-yellow-50 dark:bg-yellow-900/20 border border-yellow-200 dark:border-yellow-800 rounded-lg">
                 <p className="text-sm text-yellow-800 dark:text-yellow-200">
-                  ⚠️ You&apos;re not signed in. Your session won&apos;t be saved. <button onClick={() => window.location.href = '/login'} className="underline font-medium hover:text-yellow-900 dark:hover:text-yellow-100">Sign in</button> to save your progress.
+                  ⚠️ You&apos;re not signed in. Your session won&apos;t be saved. <button onClick={() => router.push('/login')} className="underline font-medium hover:text-yellow-900 dark:hover:text-yellow-100 cursor-pointer">Sign in</button> to save your progress.
                 </p>
               </div>
             )}

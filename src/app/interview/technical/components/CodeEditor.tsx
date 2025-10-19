@@ -46,7 +46,7 @@ export default function CodeEditor({
           <button
             onClick={onRunCode}
             disabled={isRunning}
-            className="flex items-center gap-2 text-sm py-1.5 px-3 rounded-lg font-medium text-white bg-[rgba(76,166,38,1)] hover:bg-[rgba(76,166,38,0.9)] disabled:opacity-50 disabled:cursor-not-allowed transition-all cursor-pointer"
+            className="flex items-center gap-2 text-sm py-1.5 px-3 rounded-lg font-medium text-white bg-[rgba(76,166,38,1)] hover:bg-[rgba(76,166,38,0.9)] disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200 cursor-pointer hover:scale-105 hover:shadow-lg disabled:hover:scale-100 disabled:hover:shadow-none"
           >
             <Play className="w-4 h-4" />
             {isRunning ? 'Running...' : 'Run'}
@@ -54,14 +54,14 @@ export default function CodeEditor({
           <button
             onClick={onRequestFeedback}
             disabled={isFetchingFeedback}
-            className="flex items-center gap-2 text-sm py-1.5 px-3 rounded-lg font-medium text-gray-700 dark:text-gray-300 bg-gray-200 dark:bg-gray-700 hover:bg-gray-300 dark:hover:bg-gray-600 disabled:opacity-50 disabled:cursor-not-allowed transition-all cursor-pointer"
+            className="flex items-center gap-2 text-sm py-1.5 px-3 rounded-lg font-medium text-gray-700 dark:text-gray-300 bg-gray-200 dark:bg-gray-700 hover:bg-gray-300 dark:hover:bg-gray-600 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200 cursor-pointer hover:scale-105 hover:shadow-md disabled:hover:scale-100 disabled:hover:shadow-none"
           >
             <Lightbulb className="w-4 h-4" />
             {isFetchingFeedback ? 'Loading...' : 'Feedback'}
           </button>
           <button
             onClick={onReset}
-            className="flex items-center gap-2 text-sm py-1.5 px-3 rounded-lg font-medium text-gray-700 dark:text-gray-300 bg-gray-200 dark:bg-gray-700 hover:bg-gray-300 dark:hover:bg-gray-600 transition-all cursor-pointer"
+            className="flex items-center gap-2 text-sm py-1.5 px-3 rounded-lg font-medium text-gray-700 dark:text-gray-300 bg-gray-200 dark:bg-gray-700 hover:bg-gray-300 dark:hover:bg-gray-600 transition-all duration-200 cursor-pointer hover:scale-105 hover:shadow-md"
           >
             <RotateCcw className="w-4 h-4" />
             Reset

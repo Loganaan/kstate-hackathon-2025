@@ -13,8 +13,8 @@ export default function LivePracticeModal({ isOpen, onClose, onStart }: LivePrac
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 pl-24">
-      <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-2xl max-w-2xl w-full mx-4 overflow-hidden">
+    <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 pl-24 overflow-y-auto py-4">
+      <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-2xl max-w-2xl w-full mx-4 overflow-hidden my-auto max-h-[90vh] flex flex-col">
         {/* Modal Header */}
         <div className="p-6 border-b border-gray-200 dark:border-gray-700">
           <h2 className="text-2xl font-bold text-gray-900 dark:text-gray-100">
@@ -26,7 +26,7 @@ export default function LivePracticeModal({ isOpen, onClose, onStart }: LivePrac
         </div>
 
         {/* Modal Content */}
-        <div className="p-6 space-y-6">
+        <div className="p-6 space-y-6 overflow-y-auto flex-1">
           <div className="bg-[rgba(76,166,38,0.1)] dark:bg-[rgba(76,166,38,0.2)] rounded-lg p-4 border border-[rgba(76,166,38,0.3)] dark:border-[rgba(76,166,38,0.4)]">
             <h3 className="font-semibold text-gray-900 dark:text-gray-100 mb-2">
               What to expect:

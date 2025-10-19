@@ -36,7 +36,7 @@ export default function ProblemPanel({
       <div className="flex border-b border-gray-200 dark:border-gray-800">
         <button
           onClick={() => onTabChange('question')}
-          className={`flex-1 px-6 py-3 text-sm font-semibold transition-all cursor-pointer ${
+          className={`flex-1 px-6 py-3 text-sm font-semibold transition-all duration-200 cursor-pointer ${
             activeTab === 'question'
               ? 'text-[rgba(76,166,38,1)] border-b-2 border-[rgba(76,166,38,1)] bg-gray-50 dark:bg-gray-800'
               : 'text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-200 hover:bg-gray-50 dark:hover:bg-gray-800'
@@ -46,7 +46,7 @@ export default function ProblemPanel({
         </button>
         <button
           onClick={() => onTabChange('feedback')}
-          className={`flex-1 px-6 py-3 text-sm font-semibold transition-all cursor-pointer ${
+          className={`flex-1 px-6 py-3 text-sm font-semibold transition-all duration-200 cursor-pointer ${
             activeTab === 'feedback'
               ? 'text-[rgba(76,166,38,1)] border-b-2 border-[rgba(76,166,38,1)] bg-gray-50 dark:bg-gray-800'
               : 'text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-200 hover:bg-gray-50 dark:hover:bg-gray-800'

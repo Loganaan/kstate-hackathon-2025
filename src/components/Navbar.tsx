@@ -54,7 +54,7 @@ export default function Navbar() {
             {user ? (
               <button
                 onClick={handleSignOut}
-                className="flex items-center gap-2 px-4 py-2 rounded-lg bg-red-50 hover:bg-red-100 dark:bg-red-900/20 dark:hover:bg-red-900/30 text-red-600 dark:text-red-400 font-medium transition-colors"
+                className="flex items-center gap-2 px-6 py-3 rounded-lg bg-red-50 hover:bg-red-100 dark:bg-red-900/20 dark:hover:bg-red-900/30 text-red-600 dark:text-red-400 font-semibold transition-all duration-200 cursor-pointer hover:scale-105 hover:shadow-md"
                 title="Sign Out"
               >
                 <LogOut className="w-5 h-5" />
@@ -63,7 +63,7 @@ export default function Navbar() {
             ) : (
               <button
                 onClick={handleSignIn}
-                className="flex items-center gap-2 px-4 py-2 rounded-lg bg-blue-600 hover:bg-blue-700 text-white font-medium transition-colors shadow-sm"
+                className="flex items-center gap-2 px-6 py-3 rounded-lg bg-[rgba(76,166,38,1)] hover:bg-[rgba(76,166,38,0.9)] text-white font-semibold transition-all duration-200 cursor-pointer hover:scale-105 hover:shadow-lg shadow-sm"
                 title="Sign In"
               >
                 <LogIn className="w-5 h-5" />
