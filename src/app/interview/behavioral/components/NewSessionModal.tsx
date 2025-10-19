@@ -51,8 +51,8 @@ export default function NewSessionModal({ isOpen, onClose, onStart }: NewSession
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 pl-24">
-      <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-2xl max-w-2xl w-full mx-4 overflow-hidden">
+    <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 pl-24 overflow-y-auto py-4">
+      <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-2xl max-w-2xl w-full mx-4 overflow-hidden my-auto max-h-[90vh] flex flex-col">
         {/* Modal Header */}
         <div className="p-6 border-b border-gray-200 dark:border-gray-700 flex items-center justify-between">
           <div>
@@ -65,14 +65,14 @@ export default function NewSessionModal({ isOpen, onClose, onStart }: NewSession
           </div>
           <button
             onClick={handleClose}
-            className="text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 transition-colors"
+            className="text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 transition-all duration-200 cursor-pointer hover:scale-110"
           >
             <X className="w-6 h-6" />
           </button>
         </div>
 
         {/* Modal Content */}
-        <div className="p-6 space-y-5">
+        <div className="p-6 space-y-5 overflow-y-auto flex-1">
           {/* Company */}
           <div>
             <label

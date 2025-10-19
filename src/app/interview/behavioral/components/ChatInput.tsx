@@ -33,7 +33,7 @@ export default function ChatInput({ value, onChange, onSend, placeholder = "Type
         <button
           onClick={onSend}
           disabled={disabled || !value.trim()}
-          className="bg-[rgba(76,166,38,1)] hover:bg-[rgba(76,166,38,0.9)] text-white rounded-full p-3 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+          className="bg-[rgba(76,166,38,1)] hover:bg-[rgba(76,166,38,0.9)] text-white rounded-full p-3 transition-all duration-200 cursor-pointer hover:scale-105 hover:shadow-lg disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100 disabled:hover:shadow-none"
         >
           <Send className="w-5 h-5" />
         </button>

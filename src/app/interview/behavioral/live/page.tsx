@@ -288,7 +288,7 @@ function LiveInterviewSessionContent() {
             </div>
             <button
               onClick={endInterview}
-              className="p-2 hover:bg-white/20 rounded-lg transition-colors"
+              className="p-2 hover:bg-white/20 rounded-lg transition-all duration-200 cursor-pointer hover:scale-110"
             >
               <X className="w-6 h-6" />
             </button>
@@ -347,7 +347,7 @@ function LiveInterviewSessionContent() {
               <div className="flex items-center justify-center gap-4">
                 <button
                   onClick={toggleMute}
-                  className="p-4 bg-gray-200 dark:bg-gray-700 hover:bg-gray-300 dark:hover:bg-gray-600 rounded-full transition-colors"
+                  className="p-4 bg-gray-200 dark:bg-gray-700 hover:bg-gray-300 dark:hover:bg-gray-600 rounded-full transition-all duration-200 cursor-pointer hover:scale-105"
                   title={isMuted ? 'Unmute AI Voice' : 'Mute AI Voice'}
                 >
                   {isMuted ? (
@@ -360,7 +360,7 @@ function LiveInterviewSessionContent() {
                 {!isRecording && !isProcessing ? (
                   <button
                     onClick={startListening}
-                    className="p-6 bg-[rgba(76,166,38,1)] hover:bg-[rgba(76,166,38,0.9)] rounded-full transition-colors shadow-lg"
+                    className="p-6 bg-[rgba(76,166,38,1)] hover:bg-[rgba(76,166,38,0.9)] rounded-full transition-all duration-200 cursor-pointer hover:scale-105 shadow-lg"
                     title="Start Recording Your Answer"
                   >
                     <Mic className="w-8 h-8 text-white" />
@@ -368,7 +368,7 @@ function LiveInterviewSessionContent() {
                 ) : isRecording ? (
                   <button
                     onClick={stopListening}
-                    className="p-6 bg-red-500 hover:bg-red-600 rounded-full transition-colors shadow-lg animate-pulse"
+                    className="p-6 bg-red-500 hover:bg-red-600 rounded-full transition-all duration-200 cursor-pointer hover:scale-105 shadow-lg animate-pulse"
                     title="Stop Recording"
                   >
                     <MicOff className="w-8 h-8 text-white" />

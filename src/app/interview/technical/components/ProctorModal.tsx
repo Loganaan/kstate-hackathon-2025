@@ -12,8 +12,8 @@ export default function ProctorModal({ isOpen, onClose, onStart }: ProctorModalP
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50 px-4">
-      <div className="bg-white dark:bg-gray-900 rounded-xl shadow-2xl max-w-md w-full p-6 animate-fade-in">
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50 px-4 overflow-y-auto py-4">
+      <div className="bg-white dark:bg-gray-900 rounded-xl shadow-2xl max-w-md w-full p-6 animate-fade-in my-auto max-h-[90vh] overflow-y-auto">
         {/* Modal Header */}
         <div className="flex items-center gap-3 mb-4">
           <div className="w-12 h-12 rounded-full bg-[rgba(76,166,38,0.1)] flex items-center justify-center">
@@ -64,13 +64,13 @@ export default function ProctorModal({ isOpen, onClose, onStart }: ProctorModalP
         <div className="flex gap-3">
           <button
             onClick={onClose}
-            className="flex-1 px-4 py-2.5 rounded-lg font-medium text-gray-700 dark:text-gray-300 bg-gray-100 dark:bg-gray-800 hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors"
+            className="flex-1 px-4 py-2.5 rounded-lg font-medium text-gray-700 dark:text-gray-300 bg-gray-100 dark:bg-gray-800 hover:bg-gray-200 dark:hover:bg-gray-700 transition-all duration-200 cursor-pointer hover:scale-105 hover:shadow-md"
           >
             Cancel
           </button>
           <button
             onClick={onStart}
-            className="flex-1 px-4 py-2.5 rounded-lg font-medium text-white bg-[rgba(76,166,38,1)] hover:bg-[rgba(76,166,38,0.9)] transition-colors flex items-center justify-center gap-2"
+            className="flex-1 px-4 py-2.5 rounded-lg font-medium text-white bg-[rgba(76,166,38,1)] hover:bg-[rgba(76,166,38,0.9)] transition-all duration-200 cursor-pointer hover:scale-105 hover:shadow-lg flex items-center justify-center gap-2"
           >
             <Eye className="w-4 h-4" />
             Start Session
