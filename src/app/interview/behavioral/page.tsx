@@ -141,7 +141,7 @@ export default function BehavioralInterviewPage() {
           messages: [
             {
               role: 'system',
-              content: 'You are starting a behavioral interview. Generate ONE concise behavioral interview question about a past experience (teamwork, leadership, challenges, or problem-solving). Only output the question itself, nothing else. Make it specific and actionable.'
+              content: 'You are starting a behavioral interview. First, greet the user warmly and introduce yourself as their behavioral interview coach. Then, generate ONE concise behavioral interview question about a past experience (teamwork, leadership, challenges, or problem-solving). Make it specific and actionable.'
             }
           ],
           params,
