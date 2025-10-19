@@ -207,6 +207,20 @@ export default function TechnicalInterviewPage() {
     setFeedback('');
     setTestResults([]);
     setActiveTab('question');
+    
+    // Reset AI Proctor conversation for new question
+    if (liveProctorMode) {
+      setProctorMessages([]);
+      setIsRecording(false);
+      setIsProcessingProctor(false);
+      if (recognitionRef.current) {
+        recognitionRef.current.stop();
+      }
+      // Restart conversation with new question context
+      setTimeout(() => {
+        initiateProctorConversation();
+      }, 100);
+    }
   };
 
   // Update code when question changes
