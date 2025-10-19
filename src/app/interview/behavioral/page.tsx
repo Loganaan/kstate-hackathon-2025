@@ -569,17 +569,15 @@ function BehavioralInterviewContent() {
       <LivePracticeModal
         isOpen={showLiveModal}
         onClose={() => setShowLiveModal(false)}
-        onStart={() => {
+        onStart={(params) => {
           setShowLiveModal(false);
-          // Navigate to live practice session with current session params
-          const params = new URLSearchParams();
-          if (currentSession?.params) {
-            if (currentSession.params.company) params.append('company', currentSession.params.company);
-            if (currentSession.params.role) params.append('role', currentSession.params.role);
-            if (currentSession.params.seniority) params.append('seniority', currentSession.params.seniority);
-            if (currentSession.params.jobDescription) params.append('jobDescription', currentSession.params.jobDescription);
-          }
-          router.push(`/interview/behavioral/live?${params.toString()}`);
+          // Navigate to live practice session with params
+          const searchParams = new URLSearchParams();
+          if (params?.company) searchParams.append('company', params.company);
+          if (params?.role) searchParams.append('role', params.role);
+          if (params?.seniority) searchParams.append('seniority', params.seniority);
+          if (params?.jobDescription) searchParams.append('jobDescription', params.jobDescription);
+          router.push(`/interview/behavioral/live?${searchParams.toString()}`);
         }}
       />
 
