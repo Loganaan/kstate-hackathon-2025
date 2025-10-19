@@ -18,6 +18,7 @@ interface Message {
   role: 'user' | 'assistant';
   content: string;
   timestamp: Date;
+  isCompletion?: boolean;
 }
 
 interface ChatSession {
@@ -29,6 +30,7 @@ interface ChatSession {
   messageCount: number;
   messages: Message[];
   params?: SessionParams;
+  isComplete?: boolean;
 }
 
 function BehavioralInterviewContent() {
@@ -49,24 +51,40 @@ function BehavioralInterviewContent() {
       
       try {
         const firebaseSessions = await firebaseUtils.getChatSessions(user.uid, 'behavioral');
-        const convertedSessions: ChatSession[] = firebaseSessions.map(session => ({
-          id: session.id,
-          firebaseId: session.id,
-          title: session.title,
-          lastMessage: session.lastMessage,
-          timestamp: session.timestamp.toDate(),
-          messageCount: session.messageCount,
-          messages: session.messages.map(msg => ({
+        const convertedSessions: ChatSession[] = firebaseSessions.map(session => {
+          const sessionMessages: Message[] = session.messages.map(msg => ({
             ...msg,
-            timestamp: msg.timestamp.toDate()
-          })),
-          params: session.params ? {
-            company: session.params.company || '',
-            role: session.params.role || '',
-            seniority: session.params.seniority || '',
-            jobDescription: session.params.jobDescription || ''
-          } : undefined
-        }));
+            timestamp: msg.timestamp.toDate(),
+            isCompletion: false
+          }));
+
+          // Detect if session is complete by checking if last message is the completion message
+          const lastMessage = sessionMessages[sessionMessages.length - 1];
+          const isComplete = lastMessage?.role === 'assistant' && 
+                            lastMessage?.content.includes('Congratulations on completing the behavioral interview');
+          
+          // If complete, mark the last message with isCompletion flag
+          if (isComplete && lastMessage) {
+            lastMessage.isCompletion = true;
+          }
+
+          return {
+            id: session.id,
+            firebaseId: session.id,
+            title: session.title,
+            lastMessage: session.lastMessage,
+            timestamp: session.timestamp.toDate(),
+            messageCount: session.messageCount,
+            messages: sessionMessages,
+            params: session.params ? {
+              company: session.params.company || '',
+              role: session.params.role || '',
+              seniority: session.params.seniority || '',
+              jobDescription: session.params.jobDescription || ''
+            } : undefined,
+            isComplete
+          };
+        });
         setSessions(convertedSessions);
       } catch (error) {
         console.error('Error loading sessions from Firebase:', error);
@@ -232,7 +250,19 @@ function BehavioralInterviewContent() {
         role: 'assistant',
         content: data.response || 'I apologize, but I encountered an error. Could you please try again?',
         timestamp: new Date(),
+        isCompletion: data.interviewComplete || false,
       };
+
+      // If interview is complete, mark the session as complete
+      if (data.interviewComplete && currentSession) {
+        setSessions(prevSessions => 
+          prevSessions.map(session => 
+            session.id === activeSessionId
+              ? { ...session, isComplete: true }
+              : session
+          )
+        );
+      }
 
       // Save both user and assistant messages to Firebase only if user is logged in
       if (user && currentSession?.firebaseId) {
@@ -484,6 +514,8 @@ function BehavioralInterviewContent() {
                     role={message.role}
                     content={message.content}
                     timestamp={message.timestamp}
+                    isCompletion={message.isCompletion}
+                    sessionId={currentSession?.firebaseId || currentSession?.id}
                   />
                 ))}
                 {isLoading && (
@@ -507,7 +539,7 @@ function BehavioralInterviewContent() {
             value={inputMessage}
             onChange={setInputMessage}
             onSend={handleSendMessage}
-            disabled={isLoading || !currentSession}
+            disabled={isLoading || !currentSession || currentSession.isComplete}
           />
         </div>
       </div>
