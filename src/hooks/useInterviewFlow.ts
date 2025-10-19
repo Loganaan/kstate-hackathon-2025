@@ -5,9 +5,9 @@
 import { useState, useEffect } from 'react';
 
 export function useInterviewFlow() {
-  const [currentQuestion, setCurrentQuestion] = useState(0);
-  const [isActive, setIsActive] = useState(false);
-  const [timeElapsed, setTimeElapsed] = useState(0);
+  const [currentQuestion] = useState(0);
+  const [isActive] = useState(false);
+  const [timeElapsed] = useState(0);
 
   useEffect(() => {
     // Interview flow initialization logic will be implemented here

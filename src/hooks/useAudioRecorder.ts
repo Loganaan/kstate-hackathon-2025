@@ -2,13 +2,13 @@
 // Global custom hook for managing audio recording functionality.
 // Handles microphone permissions, recording start/stop, audio processing, and file management.
 
-import { useState, useRef } from 'react';
+import { useState } from 'react';
 
 export function useAudioRecorder() {
   const [isRecording, setIsRecording] = useState(false);
   const [audioBlob, setAudioBlob] = useState<Blob | null>(null);
   const [duration, setDuration] = useState(0);
-  const mediaRecorderRef = useRef<MediaRecorder | null>(null);
+  // const mediaRecorderRef = useRef<MediaRecorder | null>(null);
 
   // Audio recording management functions will be implemented here
   const startRecording = async () => {
