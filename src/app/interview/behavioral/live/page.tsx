@@ -1,7 +1,7 @@
 'use client';
 
 import { useRouter, useSearchParams } from 'next/navigation';
-import { useState, useEffect, useRef, Suspense } from 'react';
+import { useState, useRef, Suspense } from 'react';
 import { Mic, MicOff, Volume2, VolumeX, X, AlertCircle, Bell, BellOff } from 'lucide-react';
 import Button from '@/components/Button';
 import { useDeepgram } from '@/hooks/useDeepgram';
@@ -31,8 +31,17 @@ function LiveInterviewSessionContent() {
   const [transcript, setTranscript] = useState('');
   const [fillerWordCount, setFillerWordCount] = useState(0);
   const [fillerWordDetectionEnabled, setFillerWordDetectionEnabled] = useState(false);
+  const [interviewComplete, setInterviewComplete] = useState(false);
   
   const audioRef = useRef<HTMLAudioElement | null>(null);
+
+  // Check if this is part of full interview flow
+  const isFullInterview = searchParams.get('fullInterview') === 'true';
+
+  // Track progress for full interview mode
+  const totalQuestions = 4;
+  const answeredQuestions = Math.floor(messages.filter(m => m.role === 'user').length);
+  const progressPercentage = (answeredQuestions / totalQuestions) * 100;
 
   // Deepgram hook for speech recognition
   const { startRecording, stopRecording, isRecording } = useDeepgram({
@@ -220,13 +229,10 @@ function LiveInterviewSessionContent() {
         console.log('Interview complete - displaying summary without voice');
         
         // Stop recording and audio
-        if (recognitionRef.current) {
-          recognitionRef.current.stop();
-        }
+        stopRecording();
         if (audioRef.current) {
           audioRef.current.pause();
         }
-        setIsRecording(false);
         setInterviewComplete(true);
       }
     } catch (error) {

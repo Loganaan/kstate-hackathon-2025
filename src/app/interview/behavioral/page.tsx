@@ -191,12 +191,10 @@ function BehavioralInterviewContent() {
     if (isFullInterview && currentSession && messages.length > 0) {
       const mainQuestionsCount = countMainQuestions();
       
-      // If we've completed 4 questions and the last message was from the user
+      // Check if we've completed 4 questions - but DON'T auto-show modal
+      // User will manually trigger it with the button
       if (mainQuestionsCount >= 4 && messages[messages.length - 1].role === 'user') {
-        // Wait a moment to show the completion, then transition
-        setTimeout(() => {
-          setShowTransitionModal(true);
-        }, 2000);
+        // Modal will be triggered manually via button click
       }
     }
   }, [messages, isFullInterview, currentSession, countMainQuestions]);
@@ -508,13 +506,25 @@ function BehavioralInterviewContent() {
                 </h1>
               </div>
               {currentSession && messages.length > 0 && (
-                <div className="text-right">
-                  <div className="text-sm font-medium text-gray-900 dark:text-gray-100">
-                    Question {Math.min(countMainQuestions(), 4)} of 4
+                <div className="flex items-center gap-4">
+                  <div className="text-right">
+                    <div className="text-sm font-medium text-gray-900 dark:text-gray-100">
+                      Question {Math.min(countMainQuestions(), 4)} of 4
+                    </div>
+                    <div className="text-xs text-gray-500 dark:text-gray-400 mt-1">
+                      Answer to continue
+                    </div>
                   </div>
-                  <div className="text-xs text-gray-500 dark:text-gray-400 mt-1">
-                    Answer to continue
-                  </div>
+                  {/* Continue button - shows when 4 questions complete in full interview mode */}
+                  {isFullInterview && countMainQuestions() >= 4 && (
+                    <button
+                      onClick={() => setShowTransitionModal(true)}
+                      className="bg-gradient-to-r from-[rgba(76,166,38,1)] to-[rgba(76,166,38,0.8)] hover:from-[rgba(76,166,38,0.9)] hover:to-[rgba(76,166,38,0.7)] text-white px-6 py-2.5 rounded-lg font-medium transition-all duration-200 flex items-center gap-2 shadow-lg hover:shadow-xl transform hover:scale-105"
+                    >
+                      Continue
+                      <ArrowRight className="w-4 h-4" />
+                    </button>
+                  )}
                 </div>
               )}
             </div>
