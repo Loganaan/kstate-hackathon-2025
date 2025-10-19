@@ -11,6 +11,7 @@ import NewSessionModal, { SessionParams } from './components/NewSessionModal';
 import ChatInput from './components/ChatInput';
 import { firebaseUtils } from '@/lib/firebase';
 import { Timestamp } from 'firebase/firestore';
+import { useAuth } from '@/contexts/AuthContext';
 
 interface Message {
   id: string;
@@ -30,8 +31,9 @@ interface ChatSession {
   params?: SessionParams;
 }
 
-export default function BehavioralInterviewPage() {
+function BehavioralInterviewContent() {
   const router = useRouter();
+  const { user } = useAuth();
   const [sessions, setSessions] = useState<ChatSession[]>([]);
   const [activeSessionId, setActiveSessionId] = useState<string>('');
   const [inputMessage, setInputMessage] = useState('');
@@ -43,8 +45,10 @@ export default function BehavioralInterviewPage() {
   // Load sessions from Firebase on mount
   useEffect(() => {
     const loadSessions = async () => {
+      if (!user) return;
+      
       try {
-        const firebaseSessions = await firebaseUtils.getChatSessions(undefined, 'behavioral');
+        const firebaseSessions = await firebaseUtils.getChatSessions(user.uid, 'behavioral');
         const convertedSessions: ChatSession[] = firebaseSessions.map(session => ({
           id: session.id,
           firebaseId: session.id,
@@ -70,7 +74,7 @@ export default function BehavioralInterviewPage() {
     };
 
     loadSessions();
-  }, []);
+  }, [user]);
 
   // Auto-scroll to bottom when messages change
   useEffect(() => {
@@ -212,6 +216,8 @@ export default function BehavioralInterviewPage() {
           })),
           interviewType: 'behavioral',
           params: currentSession.params,
+          sessionId: currentSession.firebaseId,
+          userId: user?.uid,
         }),
       });
 
@@ -228,8 +234,8 @@ export default function BehavioralInterviewPage() {
         timestamp: new Date(),
       };
 
-      // Save both user and assistant messages to Firebase
-      if (currentSession?.firebaseId) {
+      // Save both user and assistant messages to Firebase only if user is logged in
+      if (user && currentSession?.firebaseId) {
         try {
           // Add user message
           await firebaseUtils.addMessageToSession(
@@ -320,21 +326,25 @@ export default function BehavioralInterviewPage() {
       const timestamp = new Date();
       const localId = Date.now().toString();
       
-      // Save to Firebase
-      const firebaseId = await firebaseUtils.saveChatSession({
-        title,
-        lastMessage: firstQuestion.content,
-        timestamp: Timestamp.fromDate(timestamp),
-        messageCount: 1,
-        messages: [{
-          id: firstQuestion.id,
-          role: firstQuestion.role,
-          content: firstQuestion.content,
-          timestamp: Timestamp.fromDate(firstQuestion.timestamp)
-        }],
-        params,
-        type: 'behavioral'
-      });
+      // Save to Firebase only if user is logged in
+      let firebaseId = undefined;
+      if (user) {
+        firebaseId = await firebaseUtils.saveChatSession({
+          title,
+          lastMessage: firstQuestion.content,
+          timestamp: Timestamp.fromDate(timestamp),
+          messageCount: 1,
+          messages: [{
+            id: firstQuestion.id,
+            role: firstQuestion.role,
+            content: firstQuestion.content,
+            timestamp: Timestamp.fromDate(firstQuestion.timestamp)
+          }],
+          params,
+          userId: user.uid,
+          type: 'behavioral'
+        });
+      }
       
       const newSession: ChatSession = {
         id: localId,
@@ -436,6 +446,14 @@ export default function BehavioralInterviewPage() {
                 </div>
               )}
             </div>
+            {/* Not signed in warning */}
+            {!user && (
+              <div className="mt-3 p-3 bg-yellow-50 dark:bg-yellow-900/20 border border-yellow-200 dark:border-yellow-800 rounded-lg">
+                <p className="text-sm text-yellow-800 dark:text-yellow-200">
+                  ⚠️ You&apos;re not signed in. Your session won&apos;t be saved. <button onClick={() => window.location.href = '/login'} className="underline font-medium hover:text-yellow-900 dark:hover:text-yellow-100">Sign in</button> to save your progress.
+                </p>
+              </div>
+            )}
           </div>
 
           {/* Messages Area */}
@@ -525,4 +543,8 @@ export default function BehavioralInterviewPage() {
       />
     </div>
   );
+}
+
+export default function BehavioralInterviewPage() {
+  return <BehavioralInterviewContent />;
 }

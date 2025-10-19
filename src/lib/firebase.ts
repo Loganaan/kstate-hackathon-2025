@@ -47,7 +47,7 @@ export interface FirebaseChatSession {
     seniority?: string;
     jobDescription?: string;
   };
-  userId?: string;
+  userId: string; // Required - each session must belong to a user
   type: 'behavioral' | 'technical';
 }
 
@@ -91,21 +91,16 @@ export const firebaseUtils = {
     }
   },
 
-  // Get all chat sessions for a user (or all if no userId)
-  async getChatSessions(userId?: string, type?: 'behavioral' | 'technical'): Promise<FirebaseChatSession[]> {
+  // Get all chat sessions for a user
+  async getChatSessions(userId: string, type?: 'behavioral' | 'technical'): Promise<FirebaseChatSession[]> {
     try {
-      // Simplified query to avoid needing composite index
+      // Query sessions for the specific user
       // Filter by type client-side to avoid compound query requirements
-      let q = query(
+      const q = query(
         collection(db, 'chatSessions'),
+        where('userId', '==', userId),
         orderBy('timestamp', 'desc')
       );
-
-      // Note: Only using userId filter in the query to avoid compound index requirement
-      // Type filtering is done client-side below
-      if (userId) {
-        q = query(q, where('userId', '==', userId));
-      }
 
       const querySnapshot = await getDocs(q);
       let sessions = querySnapshot.docs.map(doc => ({
