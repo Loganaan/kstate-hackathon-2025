@@ -3,6 +3,7 @@
 import { useTheme } from 'next-themes';
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
+import Image from 'next/image';
 
 export default function ThemeLogo() {
   const [mounted, setMounted] = useState(false);
@@ -25,10 +26,13 @@ export default function ThemeLogo() {
 
   return (
     <Link href="/" className="cursor-pointer">
-      <img 
-        src={logoSrc} 
-        alt="TechReady Logo" 
-        className="h-16 object-contain transition-opacity duration-300 hover:opacity-80" 
+      <Image
+        src={logoSrc}
+        alt="TechReady Logo"
+        width={192}
+        height={64}
+        className="h-16 object-contain transition-opacity duration-300 hover:opacity-80"
+        priority
       />
     </Link>
   );

@@ -56,7 +56,7 @@ function parseGeminiJSON(text: string): unknown {
       const extracted = cleaned.substring(firstBrace, lastBrace + 1);
       try {
         return JSON.parse(extracted);
-      } catch (extractError) {
+      } catch {
         // If still failing, try to fix common issues
         console.error('[Gemini API] Extraction failed, attempting fixes...');
         
@@ -71,7 +71,7 @@ function parseGeminiJSON(text: string): unknown {
         
         try {
           return JSON.parse(fixed);
-        } catch (finalError) {
+        } catch {
           console.error('[Gemini API] All parsing attempts failed');
           console.error('[Gemini API] Original text length:', text.length);
           console.error('[Gemini API] Text preview:', text.substring(0, 500));

@@ -3,6 +3,7 @@
 import Link from "next/link";
 import Button from "@/components/Button";
 import { useRouter } from "next/navigation";
+import Image from 'next/image';
 
 export default function About() {
   const router = useRouter();
@@ -52,10 +53,13 @@ export default function About() {
             Meet the Team
           </h2>
           <div className="flex justify-center mb-8 sm:mb-12">
-            <img 
+            <Image 
               src="/images/team_pic.jpg"
               alt="Team Photo"
+              width={800}
+              height={400}
               className="rounded-lg shadow-lg max-w-full h-auto md:max-w-2xl"
+              priority
             />
           </div>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6 sm:gap-8">
