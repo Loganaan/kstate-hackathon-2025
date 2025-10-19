@@ -273,7 +273,8 @@ export default function BehavioralInterviewPage() {
   };
 
   return (
-    <div className="bg-gray-50 dark:bg-gray-950 min-h-[calc(100vh-8rem)] pl-20">
+    <div className="bg-gray-50 dark:bg-gray-950 min-h-[calc(100vh-8rem)]">
+      <div className="pl-24 bg-gray-50 dark:bg-gray-950">
       <div className="flex h-[calc(100vh-8rem)]">
         
         {/* Left Sidebar - Sessions List */}
@@ -403,6 +404,7 @@ export default function BehavioralInterviewPage() {
             disabled={isLoading || !currentSession}
           />
         </div>
+      </div>
       </div>
 
       {/* Live Practice Modal */}

@@ -386,7 +386,8 @@ Keep up the good work! Review the test cases and iterate on your solution.`;
   }
 
   return (
-    <div className="bg-gray-50 dark:bg-gray-950 min-h-screen pl-20">
+    <div className="bg-gray-50 dark:bg-gray-950 min-h-screen">
+      <div className="pl-24 bg-gray-50 dark:bg-gray-950">
       {/* Header */}
       <SessionHeader
         title={currentProblem.title}
@@ -479,6 +480,7 @@ Keep up the good work! Review the test cases and iterate on your solution.`;
         totalTests={currentApiQuestion?.testCases?.length || testResults.length || 5}
         liveProctorMode={liveProctorMode}
       />
+      </div>
     </div>
   );
 }
