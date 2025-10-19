@@ -10,7 +10,7 @@ export default function DashboardPage() {
   const completedInterviews = 12;
 
   return (
-    <div className="bg-gray-50 dark:bg-gray-950 min-h-[calc(100vh-8rem)] pl-20">
+    <div className="bg-gray-50 dark:bg-gray-950 min-h-[calc(100vh-8rem)] pl-24">
       <div className="max-w-7xl mx-auto px-6 sm:px-8 lg:px-12 py-8">
         
         {/* Header */}
