@@ -117,7 +117,7 @@ export default function ProblemPanel({
             </h2>
             {feedback ? (
               <div className="prose dark:prose-invert max-w-none">
-                <div className="bg-gray-50 dark:bg-gray-800 rounded-lg p-4 whitespace-pre-line text-sm">
+                <div className="bg-gray-50 dark:bg-gray-800 rounded-lg p-4 whitespace-pre-line text-sm text-gray-900 dark:text-gray-100">
                   {feedback}
                 </div>
               </div>
