@@ -315,17 +315,23 @@ export default function SideButtons() {
           onMouseLeave={() => setHoveredButton(null)}
           className="group relative w-16 h-16 rounded-2xl flex items-center justify-center cursor-pointer"
           style={{
-            background: hoveredButton === 'flashcards'
+            background: isActive('/about')
+              ? 'linear-gradient(to bottom right, rgba(76,166,38,0.2), rgba(76,166,38,0.05))'
+              : hoveredButton === 'about'
               ? 'linear-gradient(to bottom right, rgba(76,166,38,0.15), rgba(76,166,38,0.05))'
               : colors.background,
             borderWidth: '1px',
             borderStyle: 'solid',
-            borderColor: hoveredButton === 'flashcards' 
+            borderColor: isActive('/about')
+              ? 'rgba(76,166,38,0.6)'
+              : hoveredButton === 'about' 
               ? 'rgba(76,166,38,0.4)' 
               : colors.border,
             transform: hoveredButton === 'about' ? 'scale(1.1) rotate(-3deg)' : 'scale(1)',
             transition: 'all 300ms ease-out',
-            boxShadow: hoveredButton === 'about'
+            boxShadow: isActive('/about')
+              ? '0 0 20px rgba(76,166,38,0.3)'
+              : hoveredButton === 'about'
               ? '0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04)'
               : '0 4px 6px -1px rgba(0, 0, 0, 0.1)'
           }}
@@ -339,7 +345,7 @@ export default function SideButtons() {
             stroke="currentColor"
             className="w-7 h-7"
             style={{
-              color: hoveredButton === 'flashcards' 
+              color: isActive('/about') || hoveredButton === 'about' 
                 ? 'rgba(76,166,38,1)' 
                 : colors.icon,
               transform: hoveredButton === 'about' ? 'scale(1.1)' : 'scale(1)',
