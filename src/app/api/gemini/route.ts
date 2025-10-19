@@ -95,23 +95,10 @@ export async function POST(request: NextRequest) {
     
     // After 4 main questions and 4+ responses, provide feedback
     if (mainQuestionCount >= 4 && userResponses >= 4) {
-      // Extract Q&A pairs for evaluation - create feedback message
-      const feedbackSystemMessage = {
-        role: 'system',
-        content: `You have just completed a behavioral interview with 4 questions. Review the entire conversation and provide comprehensive feedback.
-
-Please provide:
-1. Overall performance summary
-2. Strengths demonstrated in the responses
-3. Areas for improvement
-4. Specific suggestions for better answers using the STAR method
-5. A score out of 10 for interview readiness
-
-Be constructive, encouraging, and specific in your feedback.`
-      };
-
-      const response = await geminiClient.chat([feedbackSystemMessage, ...messages], params);
-      return NextResponse.json({ response, interviewComplete: true });
+      // Return a brief completion message
+      const completionMessage = "Congratulations on completing the behavioral interview! You've answered all 4 questions. Click the button below to view your detailed performance analysis and feedback.";
+      
+      return NextResponse.json({ response: completionMessage, interviewComplete: true });
     }
     
     // Update system prompt to track question count

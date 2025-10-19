@@ -5,7 +5,7 @@
 // Import the functions you need from the SDKs you need
 import { initializeApp, getApps } from 'firebase/app';
 import { getAuth } from 'firebase/auth';
-import { getFirestore, collection, addDoc, updateDoc, doc, getDoc, getDocs, query, where, orderBy, Timestamp } from 'firebase/firestore';
+import { getFirestore, collection, addDoc, updateDoc, doc, getDoc, getDocs, query, where, orderBy, deleteDoc, Timestamp } from 'firebase/firestore';
 import { getStorage } from 'firebase/storage';
 
 // Firebase configuration object
@@ -139,6 +139,17 @@ export const firebaseUtils = {
       }
     } catch (error) {
       console.error('Error adding message to session:', error);
+      throw error;
+    }
+  },
+
+  // Delete a chat session
+  async deleteChatSession(sessionId: string): Promise<void> {
+    try {
+      const sessionRef = doc(db, 'chatSessions', sessionId);
+      await deleteDoc(sessionRef);
+    } catch (error) {
+      console.error('Error deleting chat session:', error);
       throw error;
     }
   }

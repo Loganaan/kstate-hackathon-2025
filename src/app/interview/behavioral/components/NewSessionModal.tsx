@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { X } from 'lucide-react';
 import Button from '@/components/Button';
 
@@ -8,6 +8,7 @@ interface NewSessionModalProps {
   isOpen: boolean;
   onClose: () => void;
   onStart: (params: SessionParams) => void;
+  initialParams?: Partial<SessionParams>;
 }
 
 export interface SessionParams {
@@ -17,11 +18,21 @@ export interface SessionParams {
   jobDescription: string;
 }
 
-export default function NewSessionModal({ isOpen, onClose, onStart }: NewSessionModalProps) {
+export default function NewSessionModal({ isOpen, onClose, onStart, initialParams }: NewSessionModalProps) {
   const [company, setCompany] = useState('');
   const [role, setRole] = useState('');
   const [seniority, setSeniority] = useState('');
   const [jobDescription, setJobDescription] = useState('');
+
+  // Pre-fill form with initial params if provided
+  useEffect(() => {
+    if (isOpen && initialParams) {
+      setCompany(initialParams.company || '');
+      setRole(initialParams.role || '');
+      setSeniority(initialParams.seniority || '');
+      setJobDescription(initialParams.jobDescription || '');
+    }
+  }, [isOpen, initialParams]);
 
   const handleStart = () => {
     // All fields are optional, so we can start even with empty values

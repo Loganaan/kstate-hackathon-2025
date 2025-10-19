@@ -37,7 +37,7 @@ export default function InterviewSessionPage() {
   // Render behavioral interview session
   if (type === 'behavioral') {
     return (
-      <div className="bg-gray-50 dark:bg-gray-950 min-h-[calc(100vh-8rem)] pl-24">
+      <div className="bg-gray-50 dark:bg-gray-950 min-h-[calc(100vh-8rem)]">
         {/* Header */}
         <div className="bg-white dark:bg-gray-900 border-b border-gray-200 dark:border-gray-800">
           <div className="max-w-7xl mx-auto px-6 sm:px-8 lg:px-12 py-4">
@@ -193,7 +193,7 @@ export default function InterviewSessionPage() {
   // Render technical interview session
   if (type === 'technical') {
     return (
-      <div className="bg-gray-50 dark:bg-gray-950 min-h-[calc(100vh-8rem)] pl-24">
+      <div className="bg-gray-50 dark:bg-gray-950 min-h-[calc(100vh-8rem)]">
         {/* Header */}
         <div className="bg-white dark:bg-gray-900 border-b border-gray-200 dark:border-gray-800">
           <div className="max-w-full px-6 sm:px-8 lg:px-12 py-4">
