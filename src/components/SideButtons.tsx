@@ -91,7 +91,8 @@ export default function SideButtons() {
       </button>
 
       {/* About Button */}
-      <button
+      <Link
+        href="/about"
         className="w-12 h-12 bg-[rgba(76,166,38,1)] hover:bg-[rgba(76,166,38,0.9)] text-white rounded-md flex items-center justify-center shadow transform transition-all duration-200 hover:scale-110"
         title="About"
       >
@@ -109,7 +110,7 @@ export default function SideButtons() {
             d="M12 17v-6m0-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
           />
         </svg>
-      </button>
+      </Link>
 
       {/* Theme Toggle Button */}
       <ThemeToggle />
