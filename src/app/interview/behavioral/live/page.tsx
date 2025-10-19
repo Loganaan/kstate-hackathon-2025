@@ -234,10 +234,20 @@ function LiveInterviewSessionContent() {
   };
 
   const toggleMute = () => {
-    setIsMuted(!isMuted);
+    const newMutedState = !isMuted;
+    setIsMuted(newMutedState);
+    
     if (audioRef.current) {
-      if (!isMuted) {
+      if (newMutedState) {
+        // Muting - pause the audio
         audioRef.current.pause();
+      } else {
+        // Unmuting - resume the audio if it was paused
+        if (audioRef.current.paused) {
+          audioRef.current.play().catch(error => {
+            console.error('Error resuming audio:', error);
+          });
+        }
       }
     }
   };
