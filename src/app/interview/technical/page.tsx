@@ -11,6 +11,7 @@ import StatusBar from './components/StatusBar';
 import InterviewSetup from './components/InterviewSetup';
 import MultipleChoiceQuestion from './components/MultipleChoiceQuestion';
 import FreeResponseQuestion from './components/FreeResponseQuestion';
+import InterviewSummary from './components/InterviewSummary';
 
 interface TestCase {
   input: string;
@@ -79,6 +80,10 @@ export default function TechnicalInterviewPage() {
   const [currentQuestionIndex, setCurrentQuestionIndex] = useState(0);
   const [loadingQuestions, setLoadingQuestions] = useState(false);
   const [setupError, setSetupError] = useState<string | null>(null);
+  
+  // Interview completion state
+  const [isInterviewComplete, setIsInterviewComplete] = useState(false);
+  const [questionResults, setQuestionResults] = useState<any[]>([]);
 
   // Editor state - Python only
   const [language] = useState<'python'>('python');
@@ -388,6 +393,9 @@ Keep up the good work! Review the test cases and iterate on your solution.`;
 
   // Handle Next Question
   const handleNextQuestion = () => {
+    // Save current question result before moving
+    saveQuestionResult();
+    
     if (currentQuestionIndex < apiQuestions.length - 1) {
       setCurrentQuestionIndex(currentQuestionIndex + 1);
     }
@@ -395,9 +403,80 @@ Keep up the good work! Review the test cases and iterate on your solution.`;
 
   // Handle Previous Question
   const handlePreviousQuestion = () => {
+    // Save current question result before moving
+    saveQuestionResult();
+    
     if (currentQuestionIndex > 0) {
       setCurrentQuestionIndex(currentQuestionIndex - 1);
     }
+  };
+
+  // Save current question result
+  const saveQuestionResult = () => {
+    if (!currentApiQuestion) return;
+
+    const result: any = {
+      questionNumber: currentQuestionIndex + 1,
+      format: currentApiQuestion.format,
+      difficulty: currentApiQuestion.difficulty,
+      topicTags: currentApiQuestion.topicTags,
+    };
+
+    // Determine status based on question type
+    if (currentApiQuestion.format === 'coding') {
+      const passedCount = testResults.filter((t) => t.passed).length;
+      const totalCount = testResults.length;
+      result.score = totalCount > 0 ? Math.round((passedCount / totalCount) * 100) : 0;
+      result.status = passedCount === totalCount ? 'correct' : passedCount > 0 ? 'partial' : 'incorrect';
+      result.details = `${passedCount}/${totalCount} tests passed`;
+    } else if (currentApiQuestion.format === 'multiple-choice') {
+      if (mcSubmitted) {
+        const isCorrect = currentApiQuestion.choices?.find((c) => c.label === selectedChoice)?.correct;
+        result.status = isCorrect ? 'correct' : 'incorrect';
+        result.details = isCorrect ? 'Correct answer selected' : 'Incorrect answer selected';
+      } else {
+        result.status = 'submitted';
+        result.details = 'Not attempted';
+      }
+    } else if (currentApiQuestion.format === 'free-response') {
+      result.status = frSubmitted ? 'submitted' : 'submitted';
+      result.details = frSubmitted ? 'Answer submitted and reviewed' : 'Not attempted';
+    }
+
+    // Update or add result
+    setQuestionResults((prev) => {
+      const existing = prev.findIndex((r) => r.questionNumber === result.questionNumber);
+      if (existing >= 0) {
+        const updated = [...prev];
+        updated[existing] = result;
+        return updated;
+      }
+      return [...prev, result];
+    });
+  };
+
+  // Handle Submit Interview
+  const handleSubmitInterview = () => {
+    // Save final question result
+    saveQuestionResult();
+    // Show summary
+    setIsInterviewComplete(true);
+  };
+
+  // Handle Restart Interview
+  const handleRestartInterview = () => {
+    setIsInterviewComplete(false);
+    setIsSetupComplete(false);
+    setApiQuestions([]);
+    setCurrentQuestionIndex(0);
+    setQuestionResults([]);
+    resetQuestionState();
+    setTimeElapsed(0);
+  };
+
+  // Handle Exit to Dashboard
+  const handleExitToDashboard = () => {
+    window.location.href = '/dashboard';
   };
 
   // Handle Multiple Choice submission
@@ -426,12 +505,16 @@ Keep up the good work! Review the test cases and iterate on your solution.`;
         }),
       });
 
-      if (!response.ok) {
-        throw new Error('Failed to get feedback');
-      }
-
       const data = await response.json();
-      setFrFeedback(data.feedback || 'Unable to generate feedback at this time.');
+      
+      // Check if there's feedback in the response (even on error responses)
+      if (data.feedback) {
+        setFrFeedback(data.feedback);
+      } else if (!response.ok) {
+        setFrFeedback(`Error: ${data.error || 'Failed to generate feedback. Please try again.'}`);
+      } else {
+        setFrFeedback('Unable to generate feedback at this time.');
+      }
     } catch (error) {
       console.error('Feedback error:', error);
       setFrFeedback('Error generating feedback. Please try again.');
@@ -447,6 +530,18 @@ Keep up the good work! Review the test cases and iterate on your solution.`;
         onSubmit={handleSetupSubmit}
         loading={loadingQuestions}
         error={setupError}
+      />
+    );
+  }
+
+  // Show summary if interview is complete
+  if (isInterviewComplete) {
+    return (
+      <InterviewSummary
+        results={questionResults}
+        timeElapsed={timeElapsed}
+        onRestart={handleRestartInterview}
+        onExit={handleExitToDashboard}
       />
     );
   }
@@ -487,13 +582,21 @@ Keep up the good work! Review the test cases and iterate on your solution.`;
               <span className="text-gray-700 dark:text-gray-300 font-medium">
                 Question {currentQuestionIndex + 1} of {apiQuestions.length}
               </span>
-              <button
-                onClick={handleNextQuestion}
-                disabled={currentQuestionIndex === apiQuestions.length - 1}
-                className="px-4 py-2 bg-gray-200 dark:bg-gray-800 text-gray-700 dark:text-gray-300 rounded-md hover:bg-gray-300 dark:hover:bg-gray-700 disabled:opacity-50 disabled:cursor-not-allowed font-medium"
-              >
-                Next →
-              </button>
+              {currentQuestionIndex < apiQuestions.length - 1 ? (
+                <button
+                  onClick={handleNextQuestion}
+                  className="px-4 py-2 bg-gray-200 dark:bg-gray-800 text-gray-700 dark:text-gray-300 rounded-md hover:bg-gray-300 dark:hover:bg-gray-700 font-medium"
+                >
+                  Next →
+                </button>
+              ) : (
+                <button
+                  onClick={handleSubmitInterview}
+                  className="px-6 py-2 bg-green-600 text-white rounded-md hover:bg-green-700 font-semibold shadow-lg"
+                >
+                  ✓ Submit Interview
+                </button>
+              )}
             </div>
             <div className="flex items-center gap-2">
               {currentApiQuestion?.topicTags.slice(0, 3).map((tag, idx) => (

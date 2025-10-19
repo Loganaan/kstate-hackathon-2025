@@ -27,7 +27,7 @@ export async function POST(request: NextRequest) {
     // Initialize Gemini
     const genAI = new GoogleGenerativeAI(apiKey);
     const model = genAI.getGenerativeModel({ 
-      model: 'gemini-2.0-flash-exp',
+      model: 'gemini-2.5-flash',
       generationConfig: {
         temperature: 0.7,
         maxOutputTokens: 2048,
@@ -66,12 +66,42 @@ Be encouraging but thorough. Format your response in a clear, readable way.`;
       feedback 
     });
 
-  } catch (error) {
+  } catch (error: any) {
     console.error('Error generating technical feedback:', error);
+    
+    // Check if it's a quota error
+    if (error.status === 429 || error.message?.includes('quota') || error.message?.includes('429')) {
+      return NextResponse.json(
+        { 
+          error: 'API quota exceeded',
+          feedback: `**AI Feedback Temporarily Unavailable**
+
+The Gemini API has reached its daily quota limit. Here's what you can do:
+
+**Manual Review Tips:**
+1. **Completeness**: Does your answer address all parts of the question?
+2. **Technical Accuracy**: Are your technical explanations correct?
+3. **Clarity**: Is your answer well-structured and easy to understand?
+4. **Examples**: Did you provide relevant examples where appropriate?
+5. **Depth**: Does your answer show understanding of underlying concepts?
+
+**Next Steps:**
+- Review your answer against the key points provided
+- Compare with industry best practices
+- Consider edge cases and trade-offs
+- Try again later when the API quota resets
+
+Your answer has been saved successfully!`
+        },
+        { status: 200 } // Return 200 so frontend shows the fallback message
+      );
+    }
+
     return NextResponse.json(
       { 
         error: 'Failed to generate feedback', 
-        details: error instanceof Error ? error.message : 'Unknown error' 
+        details: error instanceof Error ? error.message : 'Unknown error',
+        feedback: 'Unable to generate AI feedback at this time. Please review your answer manually and try again later.'
       },
       { status: 500 }
     );

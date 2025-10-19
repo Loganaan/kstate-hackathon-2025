@@ -146,11 +146,6 @@ except Exception as e:
       // Write wrapper code to temp file
       await writeFile(testFilePath, wrapperCode, 'utf-8');
 
-      // Debug: log the wrapper code
-      console.log('=== Generated Python Code ===');
-      console.log(wrapperCode);
-      console.log('=== End Generated Code ===');
-
       let stdout = '';
       let stderr = '';
       let timedOut = false;
@@ -172,10 +167,6 @@ except Exception as e:
       pythonProcess.on('close', async (code) => {
         // Clean up test file
         await unlink(testFilePath).catch(() => {});
-
-        console.log('Python exit code:', code);
-        console.log('stdout:', stdout);
-        console.log('stderr:', stderr);
 
         if (timedOut) {
           resolve({
@@ -204,19 +195,11 @@ except Exception as e:
           const actual = stdout.trim();
           const expected = testCase.output.trim();
           
-          console.log('Actual output (raw):', actual);
-          console.log('Expected output:', expected);
-          
           // Normalize JSON output for comparison
           const actualNormalized = normalizeOutput(actual);
           const expectedNormalized = normalizeOutput(expected);
 
-          console.log('Actual (normalized):', actualNormalized);
-          console.log('Expected (normalized):', expectedNormalized);
-
           const passed = actualNormalized === expectedNormalized;
-
-          console.log('Test passed?', passed);
 
           resolve({
             passed,
