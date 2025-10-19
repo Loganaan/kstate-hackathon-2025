@@ -11,6 +11,7 @@ export default function AuthButtons() {
   const handleSignOut = async () => {
     try {
       await signOut();
+      window.location.reload();
     } catch (error) {
       console.error('Error signing out:', error);
     }
