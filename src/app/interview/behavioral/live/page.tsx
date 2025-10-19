@@ -1,7 +1,7 @@
 'use client';
 
 import { useRouter, useSearchParams } from 'next/navigation';
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef, Suspense } from 'react';
 import { Mic, MicOff, Volume2, VolumeX, X } from 'lucide-react';
 import Button from '@/components/Button';
 
@@ -19,7 +19,7 @@ interface SessionParams {
   jobDescription?: string;
 }
 
-export default function LiveInterviewSession() {
+function LiveInterviewSessionContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const [messages, setMessages] = useState<Message[]>([]);
@@ -427,5 +427,13 @@ export default function LiveInterviewSession() {
         </div>
       </div>
     </div>
+  );
+}
+
+export default function LiveInterviewSession() {
+  return (
+    <Suspense fallback={<div className="flex items-center justify-center min-h-screen">Loading...</div>}>
+      <LiveInterviewSessionContent />
+    </Suspense>
   );
 }

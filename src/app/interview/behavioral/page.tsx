@@ -9,6 +9,9 @@ import SessionCard from './components/SessionCard';
 import LivePracticeModal from './components/LivePracticeModal';
 import NewSessionModal, { SessionParams } from './components/NewSessionModal';
 import ChatInput from './components/ChatInput';
+import { firebaseUtils } from '@/lib/firebase';
+import { Timestamp } from 'firebase/firestore';
+import { useAuth } from '@/contexts/AuthContext';
 
 interface Message {
   id: string;
@@ -19,6 +22,7 @@ interface Message {
 
 interface ChatSession {
   id: string;
+  firebaseId?: string; // Firebase document ID
   title: string;
   lastMessage: string;
   timestamp: Date;
@@ -27,8 +31,9 @@ interface ChatSession {
   params?: SessionParams;
 }
 
-export default function BehavioralInterviewPage() {
+function BehavioralInterviewContent() {
   const router = useRouter();
+  const { user } = useAuth();
   const [sessions, setSessions] = useState<ChatSession[]>([]);
   const [activeSessionId, setActiveSessionId] = useState<string>('');
   const [inputMessage, setInputMessage] = useState('');
@@ -36,6 +41,40 @@ export default function BehavioralInterviewPage() {
   const [showNewSessionModal, setShowNewSessionModal] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
+
+  // Load sessions from Firebase on mount
+  useEffect(() => {
+    const loadSessions = async () => {
+      if (!user) return;
+      
+      try {
+        const firebaseSessions = await firebaseUtils.getChatSessions(user.uid, 'behavioral');
+        const convertedSessions: ChatSession[] = firebaseSessions.map(session => ({
+          id: session.id,
+          firebaseId: session.id,
+          title: session.title,
+          lastMessage: session.lastMessage,
+          timestamp: session.timestamp.toDate(),
+          messageCount: session.messageCount,
+          messages: session.messages.map(msg => ({
+            ...msg,
+            timestamp: msg.timestamp.toDate()
+          })),
+          params: session.params ? {
+            company: session.params.company || '',
+            role: session.params.role || '',
+            seniority: session.params.seniority || '',
+            jobDescription: session.params.jobDescription || ''
+          } : undefined
+        }));
+        setSessions(convertedSessions);
+      } catch (error) {
+        console.error('Error loading sessions from Firebase:', error);
+      }
+    };
+
+    loadSessions();
+  }, [user]);
 
   // Auto-scroll to bottom when messages change
   useEffect(() => {
@@ -106,7 +145,7 @@ export default function BehavioralInterviewPage() {
           messages: [
             {
               role: 'system',
-              content: 'You are starting a behavioral interview. Generate ONE concise behavioral interview question about a past experience (teamwork, leadership, challenges, or problem-solving). Only output the question itself, nothing else. Make it specific and actionable.'
+              content: 'You are starting a behavioral interview. First, greet the user warmly and introduce yourself as their behavioral interview coach. Then, generate ONE concise behavioral interview question about a past experience (teamwork, leadership, challenges, or problem-solving). Make it specific and actionable.'
             }
           ],
           params,
@@ -177,6 +216,8 @@ export default function BehavioralInterviewPage() {
           })),
           interviewType: 'behavioral',
           params: currentSession.params,
+          sessionId: currentSession.firebaseId,
+          userId: user?.uid,
         }),
       });
 
@@ -192,6 +233,37 @@ export default function BehavioralInterviewPage() {
         content: data.response || 'I apologize, but I encountered an error. Could you please try again?',
         timestamp: new Date(),
       };
+
+      // Save both user and assistant messages to Firebase only if user is logged in
+      if (user && currentSession?.firebaseId) {
+        try {
+          // Add user message
+          await firebaseUtils.addMessageToSession(
+            currentSession.firebaseId,
+            {
+              id: newUserMessage.id,
+              role: newUserMessage.role,
+              content: newUserMessage.content,
+              timestamp: Timestamp.fromDate(newUserMessage.timestamp)
+            },
+            newUserMessage.content
+          );
+
+          // Add assistant message
+          await firebaseUtils.addMessageToSession(
+            currentSession.firebaseId,
+            {
+              id: assistantMessage.id,
+              role: assistantMessage.role,
+              content: assistantMessage.content,
+              timestamp: Timestamp.fromDate(assistantMessage.timestamp)
+            },
+            assistantMessage.content
+          );
+        } catch (error) {
+          console.error('Error saving messages to Firebase:', error);
+        }
+      }
 
       // Update session with assistant message
       setSessions(prevSessions => 
@@ -237,32 +309,61 @@ export default function BehavioralInterviewPage() {
   const createNewSession = async (params?: SessionParams) => {
     setIsLoading(true);
     
-    // Generate first question with parameters
-    const firstQuestion = await generateFirstQuestion(params);
-    
-    // Create a title based on the parameters
-    let title = `Session ${sessions.length + 1}`;
-    if (params?.role && params?.company) {
-      title = `${params.role} at ${params.company}`;
-    } else if (params?.role) {
-      title = params.role;
-    } else if (params?.company) {
-      title = params.company;
+    try {
+      // Generate first question with parameters
+      const firstQuestion = await generateFirstQuestion(params);
+      
+      // Create a title based on the parameters
+      let title = `Session ${sessions.length + 1}`;
+      if (params?.role && params?.company) {
+        title = `${params.role} at ${params.company}`;
+      } else if (params?.role) {
+        title = params.role;
+      } else if (params?.company) {
+        title = params.company;
+      }
+      
+      const timestamp = new Date();
+      const localId = Date.now().toString();
+      
+      // Save to Firebase only if user is logged in
+      let firebaseId = undefined;
+      if (user) {
+        firebaseId = await firebaseUtils.saveChatSession({
+          title,
+          lastMessage: firstQuestion.content,
+          timestamp: Timestamp.fromDate(timestamp),
+          messageCount: 1,
+          messages: [{
+            id: firstQuestion.id,
+            role: firstQuestion.role,
+            content: firstQuestion.content,
+            timestamp: Timestamp.fromDate(firstQuestion.timestamp)
+          }],
+          params,
+          userId: user.uid,
+          type: 'behavioral'
+        });
+      }
+      
+      const newSession: ChatSession = {
+        id: localId,
+        firebaseId,
+        title,
+        lastMessage: firstQuestion.content,
+        timestamp,
+        messageCount: 1,
+        messages: [firstQuestion],
+        params
+      };
+      
+      setSessions(prevSessions => [newSession, ...prevSessions]);
+      setActiveSessionId(newSession.id);
+    } catch (error) {
+      console.error('Error creating new session:', error);
+    } finally {
+      setIsLoading(false);
     }
-    
-    const newSession: ChatSession = {
-      id: Date.now().toString(),
-      title,
-      lastMessage: firstQuestion.content,
-      timestamp: new Date(),
-      messageCount: 1,
-      messages: [firstQuestion],
-      params
-    };
-    
-    setSessions(prevSessions => [newSession, ...prevSessions]);
-    setActiveSessionId(newSession.id);
-    setIsLoading(false);
   };
 
   const deleteSession = (sessionId: string) => {
@@ -331,9 +432,6 @@ export default function BehavioralInterviewPage() {
                 <h1 className="text-xl font-semibold text-gray-900 dark:text-gray-100">
                   Behavioral Interview Coach
                 </h1>
-                <p className="text-sm text-gray-600 dark:text-gray-400 mt-1">
-                  Practice with AI-powered interview questions and feedback
-                </p>
               </div>
               {currentSession && messages.length > 0 && (
                 <div className="text-right">
@@ -346,6 +444,14 @@ export default function BehavioralInterviewPage() {
                 </div>
               )}
             </div>
+            {/* Not signed in warning */}
+            {!user && (
+              <div className="mt-3 p-3 bg-yellow-50 dark:bg-yellow-900/20 border border-yellow-200 dark:border-yellow-800 rounded-lg">
+                <p className="text-sm text-yellow-800 dark:text-yellow-200">
+                  ⚠️ You&apos;re not signed in. Your session won&apos;t be saved. <button onClick={() => window.location.href = '/login'} className="underline font-medium hover:text-yellow-900 dark:hover:text-yellow-100">Sign in</button> to save your progress.
+                </p>
+              </div>
+            )}
           </div>
 
           {/* Messages Area */}
@@ -436,4 +542,8 @@ export default function BehavioralInterviewPage() {
       />
     </div>
   );
+}
+
+export default function BehavioralInterviewPage() {
+  return <BehavioralInterviewContent />;
 }

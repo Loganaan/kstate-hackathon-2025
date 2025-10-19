@@ -7,7 +7,7 @@ import { GeminiClient } from '@/lib/gemini';
 
 export async function POST(request: NextRequest) {
   try {
-    const { messages, params } = await request.json();
+    const { messages, params, sessionId, userId } = await request.json();
 
     // Get API key from environment variable
     const apiKey = process.env.GEMINI_API_KEY;
@@ -30,6 +30,23 @@ export async function POST(request: NextRequest) {
         { error: 'Messages array is required' },
         { status: 400 }
       );
+    }
+
+    // If sessionId and userId are provided, verify user owns this session
+    if (sessionId && userId) {
+      const { firebaseUtils } = await import('@/lib/firebase');
+      try {
+        const session = await firebaseUtils.getChatSession(sessionId);
+        if (session && session.userId !== userId) {
+          return NextResponse.json(
+            { error: 'Unauthorized access to session' },
+            { status: 403 }
+          );
+        }
+      } catch (error) {
+        console.error('Error verifying session ownership:', error);
+        // Continue anyway - session might not exist yet
+      }
     }
     
     // Identify main questions vs follow-ups with better pattern matching
@@ -112,7 +129,7 @@ FOLLOW-UP RULES:
 - Follow-ups should be SHORT (one sentence) and specific: "Can you tell me more about X?" or "What was the result?"
 - If the answer is complete, simply acknowledge it briefly (optional) and move to the next main question.
 
-Keep main questions focused on behavioral scenarios using the STAR method. Be encouraging but professional.`
+Keep main questions focused on behavioral scenarios using the STAR method. Maintain a casual but still professional tone`
       },
       ...messages
     ];

@@ -7,9 +7,9 @@ import { useState, useRef } from 'react';
 export function useWebcam() {
   const [isActive, setIsActive] = useState(false);
   const [isRecording, setIsRecording] = useState(false);
-  const [videoBlob, setVideoBlob] = useState<Blob | null>(null);
+  const [videoBlob] = useState<Blob | null>(null);
   const videoRef = useRef<HTMLVideoElement | null>(null);
-  const mediaRecorderRef = useRef<MediaRecorder | null>(null);
+  // const mediaRecorderRef = useRef<MediaRecorder | null>(null);
 
   // Webcam management functions will be implemented here
   const startCamera = async () => {

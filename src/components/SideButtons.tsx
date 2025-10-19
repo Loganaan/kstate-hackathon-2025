@@ -10,7 +10,7 @@ export default function SideButtons() {
   const pathname = usePathname();
   const [hoveredButton, setHoveredButton] = useState<string | null>(null);
   const [mounted, setMounted] = useState(false);
-  const { theme, resolvedTheme } = useTheme();
+  const { resolvedTheme } = useTheme();
   
   // Prevent hydration mismatch by only rendering theme-dependent content after mount
   useEffect(() => {
