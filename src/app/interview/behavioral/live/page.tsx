@@ -288,7 +288,7 @@ export default function LiveInterviewSession() {
             </div>
             <button
               onClick={endInterview}
-              className="p-2 hover:bg-white/20 rounded-lg transition-colors"
+              className="p-2 hover:bg-white/20 rounded-lg transition-all duration-200 cursor-pointer hover:scale-110"
             >
               <X className="w-6 h-6" />
             </button>
