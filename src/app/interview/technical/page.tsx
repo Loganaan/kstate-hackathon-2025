@@ -325,39 +325,42 @@ export default function TechnicalInterviewPage() {
     }
   };
 
-  // Handle Request Feedback (TODO: Connect to AI backend)
+  // Handle Request Feedback - Call AI API with code and test results
   const handleRequestFeedback = async () => {
     setIsFetchingFeedback(true);
     setActiveTab('feedback'); // Switch to feedback tab
     setFeedback('Fetching AI feedback...');
 
-    // Simulate AI feedback
-    setTimeout(() => {
-      const mockFeedback = `**Code Analysis:**
+    try {
+      const response = await fetch('/api/coding-feedback', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          question: currentApiQuestion?.prompt || currentProblem.description,
+          code: code,
+          testResults: testResults,
+          solutionOutline: currentApiQuestion?.solutionOutline,
+        }),
+      });
 
-✅ **Strengths:**
-- Clean and readable code structure
-- Good variable naming
-
-⚠️ **Areas for Improvement:**
-- Consider edge cases and boundary conditions
-- Look for optimization opportunities
-- Test with various input sizes
-
-💡 **Solution Approach:**
-${currentApiQuestion?.solutionOutline || 'Try to break down the problem into smaller steps and think about the optimal data structure.'}
-
-${currentApiQuestion?.explanation ? `\n**Additional Context:**\n${currentApiQuestion.explanation}` : ''}
-
-**Complexity Considerations:**
-- Analyze time and space complexity
-- Consider trade-offs between different approaches
-
-Keep up the good work! Review the test cases and iterate on your solution.`;
-
-      setFeedback(mockFeedback);
+      const data = await response.json();
+      
+      // Check if there's feedback in the response (even on error responses)
+      if (data.feedback) {
+        setFeedback(data.feedback);
+      } else if (!response.ok) {
+        setFeedback(`Error: ${data.error || 'Failed to generate feedback. Please try again.'}`);
+      } else {
+        setFeedback('Unable to generate feedback at this time.');
+      }
+    } catch (error) {
+      console.error('Feedback error:', error);
+      setFeedback('Error generating feedback. Please try again.');
+    } finally {
       setIsFetchingFeedback(false);
-    }, 2000);
+    }
   };
 
   // Handle Reset
