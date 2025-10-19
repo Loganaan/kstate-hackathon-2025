@@ -53,15 +53,6 @@ export default function RootLayout({
               </main>
             </SplashProvider>
           </AuthProvider>
-          <SplashProvider>
-            <SideButtons />
-            <div className="w-full flex justify-center mt-0 sticky top-0 z-50 py-3 bg-white dark:bg-gray-900 border-b border-gray-200 dark:border-gray-800 shadow-sm transition-colors">
-              <ThemeLogo />
-            </div>
-            <main>
-              {children}
-            </main>
-          </SplashProvider>
         </ThemeProvider>
       </body>
     </html>
