@@ -10,6 +10,7 @@ import { useEffect, useState } from 'react';
 
 export default function ThemeToggle() {
   const [mounted, setMounted] = useState(false);
+  const [isHovered, setIsHovered] = useState(false);
   const { theme, setTheme } = useTheme();
 
   // useEffect only runs on the client, so now we can safely show the UI
@@ -20,8 +21,15 @@ export default function ThemeToggle() {
   if (!mounted) {
     // Return a placeholder with the same size to avoid layout shift
     return (
-      <button className="w-12 h-12 bg-[rgba(76,166,38,1)] text-white rounded-md flex items-center justify-center shadow transform transition-all duration-200" aria-label="Loading theme">
-        <div className="w-5 h-5" />
+      <button 
+        className="w-16 h-16 rounded-2xl flex items-center justify-center" 
+        style={{
+          background: 'linear-gradient(to bottom right, rgba(76,166,38,1), rgba(76,166,38,0.8))',
+          boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1)'
+        }}
+        aria-label="Loading theme"
+      >
+        <div className="w-7 h-7" />
       </button>
     );
   }
@@ -38,20 +46,51 @@ export default function ThemeToggle() {
   const getIcon = () => {
     // Show icon based on current theme (system resolves to light or dark)
     if (theme === 'dark') {
-      return <Moon className="w-5 h-5 text-white" />;
+      return <Moon className="w-7 h-7" style={{ color: 'white' }} />;
     } else {
-      return <Sun className="w-5 h-5 text-white" />;
+      return <Sun className="w-7 h-7" style={{ color: 'white' }} />;
     }
   };
 
   return (
     <button
       onClick={cycleTheme}
-      className="w-12 h-12 bg-[rgba(76,166,38,1)] hover:bg-[rgba(76,166,38,0.9)] text-white rounded-md flex items-center justify-center shadow transform transition-all duration-200 hover:scale-110"
+      onMouseEnter={() => setIsHovered(true)}
+      onMouseLeave={() => setIsHovered(false)}
+      className="relative w-16 h-16 rounded-2xl flex items-center justify-center cursor-pointer group"
+      style={{
+        background: isHovered
+          ? 'linear-gradient(to bottom right, rgba(76,166,38,1), rgba(76,166,38,0.7))'
+          : 'linear-gradient(to bottom right, rgba(76,166,38,0.95), rgba(76,166,38,0.75))',
+        transform: isHovered ? 'scale(1.1) rotate(-3deg)' : 'scale(1)',
+        transition: 'all 300ms ease-out',
+        boxShadow: isHovered
+          ? '0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04), 0 0 20px rgba(76,166,38,0.3)'
+          : '0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06)'
+      }}
       aria-label={`Current theme: ${theme}. Click to toggle between light and dark mode.`}
       title={`${theme === 'dark' ? 'Dark' : 'Light'} mode - Click to toggle`}
     >
-      {getIcon()}
+      <div
+        style={{
+          transform: isHovered ? 'scale(1.1) rotate(15deg)' : 'scale(1) rotate(0deg)',
+          transition: 'all 300ms ease-out'
+        }}
+      >
+        {getIcon()}
+      </div>
+      
+      {/* Tooltip */}
+      <span 
+        className="absolute left-full ml-4 px-3 py-2 bg-gray-900 dark:bg-gray-100 text-white dark:text-gray-900 text-sm font-medium rounded-lg whitespace-nowrap pointer-events-none shadow-lg"
+        style={{
+          opacity: isHovered ? 1 : 0,
+          transform: isHovered ? 'translateX(4px)' : 'translateX(0)',
+          transition: 'all 300ms ease-out'
+        }}
+      >
+        {theme === 'dark' ? 'Switch to Light' : 'Switch to Dark'}
+      </span>
     </button>
   );
 }
