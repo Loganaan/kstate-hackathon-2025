@@ -1,5 +1,4 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { spawn } from 'child_process';
 import { writeFile, unlink } from 'fs/promises';
 import { join } from 'path';
 import { tmpdir } from 'os';
@@ -110,21 +109,15 @@ async function runPythonCode(
   code: string,
   testCase: TestCase
 ): Promise<TestResult> {
-  return new Promise(async (resolve) => {
-    // Generate unique test file
-    const testFileId = randomBytes(8).toString('hex');
-    const testFilePath = join(tmpdir(), `test_${testFileId}.py`);
-
-    try {
-      // Parse the input to extract function arguments
-      const inputArgs = parseTestInput(testCase.input);
-      
-      // Detect if code uses a class or standalone function
-      const hasClass = code.includes('class ');
-      const functionCall = extractFunctionCall(code, inputArgs, hasClass);
-      
-      // Create a wrapper script that calls the user's function with the test input
-      const wrapperCode = `
+  // Parse the input to extract function arguments
+  const inputArgs = parseTestInput(testCase.input);
+  
+  // Detect if code uses a class or standalone function
+  const hasClass = code.includes('class ');
+  const functionCall = extractFunctionCall(code, inputArgs, hasClass);
+  
+  // Create a wrapper script that calls the user's function with the test input
+  const wrapperCode = `
 import sys
 import json
 
@@ -143,112 +136,82 @@ except Exception as e:
     sys.exit(1)
 `;
 
-      // Write wrapper code to temp file
-      await writeFile(testFilePath, wrapperCode, 'utf-8');
+  try {
+    // Use Piston API for Vercel compatibility
+    const response = await fetch('https://emkc.org/api/v2/piston/execute', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        language: 'python',
+        version: '3.10.0',
+        files: [{
+          name: 'main.py',
+          content: wrapperCode,
+        }],
+        stdin: '',
+        args: [],
+        compile_timeout: 10000,
+        run_timeout: 5000,
+        compile_memory_limit: -1,
+        run_memory_limit: -1,
+      }),
+    });
 
-      let stdout = '';
-      let stderr = '';
-      let timedOut = false;
+    if (!response.ok) {
+      throw new Error(`Piston API error: ${response.status} ${response.statusText}`);
+    }
 
-      // Execute Python with the file
-      const pythonProcess = spawn('python', [testFilePath], {
-        shell: true,
-        timeout: 5000,
-      });
-
-      pythonProcess.stdout.on('data', (data) => {
-        stdout += data.toString();
-      });
-
-      pythonProcess.stderr.on('data', (data) => {
-        stderr += data.toString();
-      });
-
-      pythonProcess.on('close', async (code) => {
-        // Clean up test file
-        await unlink(testFilePath).catch(() => {});
-
-        if (timedOut) {
-          resolve({
-            passed: false,
-            input: testCase.input,
-            expected: testCase.output,
-            actual: '',
-            error: 'Execution timeout (5 seconds)',
-          });
-          return;
-        }
-
-        if (code !== 0) {
-          resolve({
-            passed: false,
-            input: testCase.input,
-            expected: testCase.output,
-            actual: '',
-            error: stderr || 'Runtime error',
-          });
-          return;
-        }
-
-        try {
-          // Parse the output and compare with expected
-          const actual = stdout.trim();
-          const expected = testCase.output.trim();
-          
-          // Normalize JSON output for comparison
-          const actualNormalized = normalizeOutput(actual);
-          const expectedNormalized = normalizeOutput(expected);
-
-          const passed = actualNormalized === expectedNormalized;
-
-          resolve({
-            passed,
-            input: testCase.input,
-            expected: testCase.output,
-            actual: actual || '(no output)',
-          });
-        } catch {
-          resolve({
-            passed: false,
-            input: testCase.input,
-            expected: testCase.output,
-            actual: stdout,
-            error: 'Failed to parse output',
-          });
-        }
-      });
-
-      pythonProcess.on('error', async (error) => {
-        await unlink(testFilePath).catch(() => {});
-        resolve({
-          passed: false,
-          input: testCase.input,
-          expected: testCase.output,
-          actual: '',
-          error: `Execution error: ${error.message}`,
-        });
-      });
-
-      // Handle timeout
-      const timeoutId = setTimeout(() => {
-        timedOut = true;
-        pythonProcess.kill();
-      }, 5000);
-
-      pythonProcess.on('close', () => {
-        clearTimeout(timeoutId);
-      });
-    } catch (error) {
-      await unlink(testFilePath).catch(() => {});
-      resolve({
+    const result = await response.json();
+    
+    // Check if execution timed out
+    if (result.run.signal === 'SIGTERM' || result.run.signal === 'SIGKILL') {
+      return {
         passed: false,
         input: testCase.input,
         expected: testCase.output,
         actual: '',
-        error: error instanceof Error ? error.message : 'Unknown error',
-      });
+        error: 'Execution timeout (5 seconds)',
+      };
     }
-  });
+
+    // Check if execution failed
+    if (result.run.code !== 0) {
+      const stderr = result.run.stderr || result.run.output || 'Runtime error';
+      return {
+        passed: false,
+        input: testCase.input,
+        expected: testCase.output,
+        actual: '',
+        error: stderr.trim(),
+      };
+    }
+
+    // Parse the output and compare with expected
+    const stdout = result.run.stdout || '';
+    const actual = stdout.trim();
+    const expected = testCase.output.trim();
+    
+    // Normalize JSON output for comparison
+    const actualNormalized = normalizeOutput(actual);
+    const expectedNormalized = normalizeOutput(expected);
+
+    const passed = actualNormalized === expectedNormalized;
+
+    return {
+      passed,
+      input: testCase.input,
+      expected: testCase.output,
+      actual: actual || '(no output)',
+    };
+  } catch (error) {
+    return {
+      passed: false,
+      input: testCase.input,
+      expected: testCase.output,
+      actual: '',
+      error: error instanceof Error ? error.message : 'Unknown error',
+    };
+  }
 }
 
 function parseTestInput(input: string): string {
