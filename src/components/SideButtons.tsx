@@ -44,6 +44,8 @@ export default function SideButtons() {
   const isDarkMode = () => mounted && resolvedTheme === 'dark';
   
   const isActive = (path: string) => {
+    // Special-case root so it doesn't match every path (startsWith('/'))
+    if (path === '/') return pathname === '/' || pathname === '';
     if (path === '/dashboard') return pathname === path;
     return pathname.startsWith(path);
   };
@@ -53,6 +55,66 @@ export default function SideButtons() {
 
       {/* Navigation Buttons */}
       <nav className="flex flex-col items-center gap-4 flex-1">
+        {/* Home Button */}
+        <Link
+          href="/"
+          onMouseEnter={() => setHoveredButton('home')}
+          onMouseLeave={() => setHoveredButton(null)}
+          className="group relative w-16 h-16 rounded-2xl flex items-center justify-center cursor-pointer"
+          style={{
+            background: isActive('/')
+              ? 'linear-gradient(to bottom right, rgba(76,166,38,0.25), rgba(76,166,38,0.15))'
+              : hoveredButton === 'home'
+              ? 'linear-gradient(to bottom right, rgba(76,166,38,0.15), rgba(76,166,38,0.05))'
+              : colors.background,
+            borderWidth: '1px',
+            borderStyle: 'solid',
+            borderColor: isActive('/')
+              ? 'rgba(76,166,38,0.5)'
+              : hoveredButton === 'home'
+              ? 'rgba(76,166,38,0.4)'
+              : colors.border,
+            transform: hoveredButton === 'home' ? 'scale(1.1) rotate(-3deg)' : 'scale(1)',
+            transition: 'all 300ms ease-out',
+            boxShadow: isActive('/')
+              ? '0 0 20px rgba(76,166,38,0.3)'
+              : hoveredButton === 'home'
+              ? '0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04)'
+              : '0 4px 6px -1px rgba(0, 0, 0, 0.1)'
+          }}
+          title="Home"
+        >
+          <svg
+            xmlns="http://www.w3.org/2000/svg"
+            fill="none"
+            viewBox="0 0 24 24"
+            strokeWidth={1.8}
+            stroke="currentColor"
+            className="w-7 h-7"
+            style={{
+              color: isActive('/') || hoveredButton === 'home'
+                ? 'rgba(76,166,38,1)'
+                : colors.icon,
+              transform: hoveredButton === 'home' ? 'scale(1.1)' : 'scale(1)',
+              transition: 'all 300ms ease-out'
+            }}
+          >
+            <path strokeLinecap="round" strokeLinejoin="round" d="M3 11.25L12 4.5l9 6.75V21a.75.75 0 01-.75.75H3.75A.75.75 0 013 21V11.25z" />
+            <path strokeLinecap="round" strokeLinejoin="round" d="M9.75 21V12h4.5v9" />
+          </svg>
+          {/* Tooltip */}
+          <span 
+            className="absolute left-full ml-4 px-3 py-2 bg-gray-900 dark:bg-gray-100 text-white dark:text-gray-900 text-sm font-medium rounded-lg whitespace-nowrap pointer-events-none shadow-lg"
+            style={{
+              opacity: hoveredButton === 'home' ? 1 : 0,
+              transform: hoveredButton === 'home' ? 'translateX(4px)' : 'translateX(0)',
+              transition: 'all 300ms ease-out'
+            }}
+          >
+            Home
+          </span>
+        </Link>
+
         {/* Behavioral Interview Button */}
         <Link
           href="/interview/behavioral"
