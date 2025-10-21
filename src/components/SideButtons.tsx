@@ -3,19 +3,46 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import ThemeToggle from "@/components/ThemeToggle";
-import { useState, useEffect } from "react";
+import { useState, useEffect, createContext, useContext, ReactNode } from "react";
 import { useTheme } from "next-themes";
+
+// Create context for mobile menu state
+const MobileMenuContext = createContext<{
+  isMobileMenuOpen: boolean;
+  setIsMobileMenuOpen: (open: boolean) => void;
+}>({
+  isMobileMenuOpen: false,
+  setIsMobileMenuOpen: () => {},
+});
+
+export const useMobileMenu = () => useContext(MobileMenuContext);
+
+export function MobileMenuProvider({ children }: { children: ReactNode }) {
+  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+
+  return (
+    <MobileMenuContext.Provider value={{ isMobileMenuOpen, setIsMobileMenuOpen }}>
+      {children}
+    </MobileMenuContext.Provider>
+  );
+}
 
 export default function SideButtons() {
   const pathname = usePathname();
   const [hoveredButton, setHoveredButton] = useState<string | null>(null);
   const [mounted, setMounted] = useState(false);
+  const { isMobileMenuOpen, setIsMobileMenuOpen } = useMobileMenu();
   const { resolvedTheme } = useTheme();
   
   // Prevent hydration mismatch by only rendering theme-dependent content after mount
   useEffect(() => {
     setMounted(true);
   }, []);
+
+  // Close mobile menu when route changes
+  useEffect(() => {
+    setIsMobileMenuOpen(false);
+  }, [pathname]);
 
   // Use light mode colors during SSR to prevent hydration mismatch
   const getThemeColors = () => {
@@ -51,7 +78,17 @@ export default function SideButtons() {
   };
 
   return (
-    <div className="fixed left-0 top-0 h-screen w-24 bg-white/95 dark:bg-gray-950/95 backdrop-blur-xl border-r border-gray-200 dark:border-gray-800 shadow-xl z-40 flex flex-col items-center pt-28 pb-8 gap-6">
+    <>
+      {/* Mobile Menu Overlay */}
+      {isMobileMenuOpen && (
+        <div
+          className="fixed inset-0 bg-black/50 backdrop-blur-sm z-[45] lg:hidden"
+          onClick={() => setIsMobileMenuOpen(false)}
+        />
+      )}
+
+      {/* Sidebar */}
+      <div className={`fixed left-0 top-0 h-screen w-24 bg-white/95 dark:bg-gray-950/95 backdrop-blur-xl border-r border-gray-200 dark:border-gray-800 shadow-xl z-50 flex flex-col items-center pt-28 pb-8 gap-6 transition-transform duration-300 lg:translate-x-0 ${isMobileMenuOpen ? 'translate-x-0' : '-translate-x-full'}`}>
 
       {/* Navigation Buttons */}
       <nav className="flex flex-col items-center gap-4 flex-1">
@@ -322,5 +359,6 @@ export default function SideButtons() {
         <ThemeToggle />
       </div>
     </div>
+    </>
   );
 }
