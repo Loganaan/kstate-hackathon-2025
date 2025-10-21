@@ -39,7 +39,7 @@ export default function About() {
             Our Mission
           </h2>
           <p className="text-base sm:text-lg text-gray-700 dark:text-gray-300 leading-relaxed text-center max-w-3xl mx-auto">
-            TechReady is designed to help you ace your technical and behavioral interviews. We provide a comprehensive interview experience to give you the confidence and skills you need to succeed.
+            Interview prep can be stressful and time-consuming — especially when it’s hard to get personalized feedback or practice both technical and behavioral questions effectively. We wanted to build a platform that makes interview prep convenient, interactive, and accessible to all. That’s how TechReady was born — an AI-powered coach that helps users practice LeetCode-style problems and behavioral interviews with live, intelligent feedback to simulate a real interview experience.
           </p>
           <div className="flex justify-center mt-6 sm:mt-8">
             <Button onClick={() => router.push('/')}>
@@ -49,12 +49,10 @@ export default function About() {
         </div>
 
         <div className="mb-12 sm:mb-16 fade-in delay-1">
-          <h2 className="text-2xl sm:text-3xl font-semibold text-black dark:text-white mb-6 sm:mb-8 text-center">
+          <h2 className="text-2xl sm:text-3xl font-semibold text-black dark:text-white mb-4 sm:mb-6 text-center">
             Meet the Team
           </h2>
-          <div className="flex justify-center mb-8 sm:mb-12">
-          </div>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6 sm:gap-8">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6 sm:gap-8 mt-2">
             <div className="bg-gray-50 dark:bg-gray-800 rounded-lg p-6 sm:p-8 transition-all hover:shadow-lg">
               <h3 className="text-xl sm:text-2xl font-semibold text-black dark:text-white mb-3 text-center">
                 Logan Crotchett
