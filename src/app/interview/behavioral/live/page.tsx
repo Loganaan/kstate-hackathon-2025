@@ -39,8 +39,11 @@ function LiveInterviewSessionContent() {
   const [interviewComplete, setInterviewComplete] = useState(false);
   const [sessionId, setSessionId] = useState<string | null>(null);
   const [isComplete, setIsComplete] = useState(false);
+  const [speakingWordIndex, setSpeakingWordIndex] = useState<number>(-1);
+  const [currentQuestionWords, setCurrentQuestionWords] = useState<string[]>([]);
   
   const audioRef = useRef<HTMLAudioElement | null>(null);
+  const speechIntervalRef = useRef<NodeJS.Timeout | null>(null);
 
   // Check if this is part of full interview flow
   const isFullInterview = searchParams.get('fullInterview') === 'true';
@@ -77,6 +80,16 @@ function LiveInterviewSessionContent() {
     seniority: searchParams.get('seniority') || undefined,
     jobDescription: searchParams.get('jobDescription') || undefined,
   };
+
+  // Cleanup effect for speech highlighting interval
+  useEffect(() => {
+    return () => {
+      if (speechIntervalRef.current) {
+        clearInterval(speechIntervalRef.current);
+        speechIntervalRef.current = null;
+      }
+    };
+  }, []);
 
   // Start the interview
   const startInterview = async () => {
@@ -174,6 +187,18 @@ function LiveInterviewSessionContent() {
   // Text-to-speech using ElevenLabs
   const speakText = async (text: string) => {
     try {
+      // Clear any previous speech highlighting
+      if (speechIntervalRef.current) {
+        clearInterval(speechIntervalRef.current);
+        speechIntervalRef.current = null;
+      }
+      setSpeakingWordIndex(-1);
+      
+      // Split text into words for highlighting
+      const words = text.split(/(\s+)/); // Keep whitespace
+      const wordTokens = words.filter(w => w.trim()); // Just words for indexing
+      setCurrentQuestionWords(wordTokens);
+
       const response = await fetch('/api/elevenlabs', {
         method: 'POST',
         headers: {
@@ -194,7 +219,7 @@ function LiveInterviewSessionContent() {
           audioRef.current.pause();
           // reset previous audio to start to avoid resuming in the middle
           audioRef.current.currentTime = 0;
-        } catch (e) {}
+        } catch {}
       }
       const audio = new Audio(audioUrl);
       audio.preload = 'auto';
@@ -203,13 +228,47 @@ function LiveInterviewSessionContent() {
       audioRef.current = audio;
 
       return new Promise<void>((resolve) => {
-        audio.onended = () => resolve();
+        audio.onended = () => {
+          // Clear highlighting when audio ends
+          if (speechIntervalRef.current) {
+            clearInterval(speechIntervalRef.current);
+            speechIntervalRef.current = null;
+          }
+          setSpeakingWordIndex(-1);
+          resolve();
+        };
+        
         // try to play after ensuring metadata is loaded; if muted, resolve immediately
         if (!isMuted) {
+          // Start word-by-word highlighting based on estimated timing
+          const wordsPerMinute = 150 * 1.2; // Adjusted for 1.2x speed
+          const msPerWord = (60 / wordsPerMinute) * 1000;
+          
+          let currentWordIdx = 0;
+          setSpeakingWordIndex(0);
+          
+          speechIntervalRef.current = setInterval(() => {
+            currentWordIdx++;
+            if (currentWordIdx < wordTokens.length) {
+              setSpeakingWordIndex(currentWordIdx);
+            } else {
+              if (speechIntervalRef.current) {
+                clearInterval(speechIntervalRef.current);
+                speechIntervalRef.current = null;
+              }
+              setSpeakingWordIndex(-1);
+            }
+          }, msPerWord);
+          
           // attempt to play and catch any promise rejection
           audio.play().catch(err => {
             // If playback fails, still resolve to avoid blocking
             console.error('Audio play failed:', err);
+            if (speechIntervalRef.current) {
+              clearInterval(speechIntervalRef.current);
+              speechIntervalRef.current = null;
+            }
+            setSpeakingWordIndex(-1);
             resolve();
           });
         } else {
@@ -218,6 +277,12 @@ function LiveInterviewSessionContent() {
       });
     } catch (error) {
       console.error('Error speaking text:', error);
+      // Clean up on error
+      if (speechIntervalRef.current) {
+        clearInterval(speechIntervalRef.current);
+        speechIntervalRef.current = null;
+      }
+      setSpeakingWordIndex(-1);
     }
   };
 
@@ -394,11 +459,11 @@ function LiveInterviewSessionContent() {
     const handleBeforeUnload = () => {
       try {
         stopRecording();
-      } catch (e) {
+      } catch {
         // swallow errors
       }
       if (audioRef.current) {
-        try { audioRef.current.pause(); } catch (e) {}
+        try { audioRef.current.pause(); } catch {}
       }
       // Note: we avoid awaiting network calls here since unload may cancel them.
     };
@@ -411,11 +476,11 @@ function LiveInterviewSessionContent() {
       // On unmount, stop recording and save session data (fire-and-forget)
       try {
         stopRecording();
-      } catch (e) {
+      } catch {
         // ignore
       }
       if (audioRef.current) {
-        try { audioRef.current.pause(); } catch (e) {}
+        try { audioRef.current.pause(); } catch {}
       }
 
       // Persist the session without navigating (similar to endInterview save logic)
@@ -587,8 +652,25 @@ function LiveInterviewSessionContent() {
                 <h3 className="text-sm font-medium text-gray-600 dark:text-gray-400 mb-2">
                   Current Question:
                 </h3>
-                <p className="text-lg text-gray-900 dark:text-gray-100 whitespace-pre-wrap">
-                  {currentQuestion}
+                <p className="text-lg text-gray-900 dark:text-gray-100 whitespace-pre-wrap leading-relaxed">
+                  {currentQuestionWords.length > 0 ? (
+                    currentQuestionWords.map((word, index) => (
+                      <span
+                        key={index}
+                        className={`transition-colors duration-200 ${
+                          index === speakingWordIndex
+                            ? 'bg-[rgba(76,166,38,0.3)] dark:bg-[rgba(76,166,38,0.4)] text-gray-900 dark:text-white font-semibold px-1 rounded'
+                            : index < speakingWordIndex
+                            ? 'text-gray-500 dark:text-gray-400'
+                            : ''
+                        }`}
+                      >
+                        {word}{' '}
+                      </span>
+                    ))
+                  ) : (
+                    currentQuestion
+                  )}
                 </p>
               </div>
 
