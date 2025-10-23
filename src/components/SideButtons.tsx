@@ -51,6 +51,10 @@ export default function SideButtons() {
         timestamp: Timestamp.now(),
       });
       setSubmitted(true);
+      // Only set don't show again on successful submit
+      if (typeof window !== 'undefined') {
+        localStorage.setItem('tr_waitlist_dont_show', 'true');
+      }
     } catch (err) {
       setSubmitError("Failed to join waitlist. Please try again later.");
     }
@@ -117,6 +121,14 @@ export default function SideButtons() {
       {showPopup && (
         <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/40">
           <div className="bg-white dark:bg-gray-900 rounded-2xl shadow-2xl p-8 max-w-sm w-full flex flex-col items-center relative animate-fade-in">
+            {/* Top right close button */}
+            <button
+              className="absolute top-3 right-3 text-gray-400 hover:text-gray-700 dark:hover:text-gray-200 text-xl font-bold cursor-pointer"
+              onClick={() => setShowPopup(false)}
+              aria-label="Close popup"
+            >
+              ×
+            </button>
             <h2 className="text-xl font-semibold mb-2 text-center">Welcome, join the waitlist!</h2>
             <p className="text-gray-700 dark:text-gray-200 text-center mb-4">
               Thanks for visiting TechReady, this application is still under development. Join our waitlist to get the latest updates!
@@ -158,26 +170,30 @@ export default function SideButtons() {
                 </form>
               </>
             )}
-            <div className="flex items-center mt-4 w-full">
-              <input
-                id="dont-show-again"
-                type="checkbox"
-                checked={dontShowAgain}
-                onChange={e => {
-                  setDontShowAgain(e.target.checked);
-                  if (e.target.checked) {
-                    localStorage.setItem('tr_waitlist_dont_show', 'true');
-                  } else {
-                    localStorage.removeItem('tr_waitlist_dont_show');
-                  }
-                }}
-                className="mr-2"
-                style={{ accentColor: '#4CA626' }}
-              />
-              <label htmlFor="dont-show-again" className="text-gray-700 dark:text-gray-200 text-sm cursor-pointer select-none">
-                Don't show again
-              </label>
-            </div>
+            {/* Only show the don't show again checkbox if not submitted */}
+            {!submitted && (
+              <div className="flex items-center mt-4 w-full">
+                <input
+                  id="dont-show-again"
+                  type="checkbox"
+                  checked={dontShowAgain}
+                  onChange={e => {
+                    setDontShowAgain(e.target.checked);
+                    if (e.target.checked) {
+                      localStorage.setItem('tr_waitlist_dont_show', 'true');
+                      setShowPopup(false);
+                    } else {
+                      localStorage.removeItem('tr_waitlist_dont_show');
+                    }
+                  }}
+                  className="mr-2"
+                  style={{ accentColor: '#4CA626' }}
+                />
+                <label htmlFor="dont-show-again" className="text-gray-700 dark:text-gray-200 text-sm cursor-pointer select-none">
+                  Don't show again
+                </label>
+              </div>
+            )}
           </div>
         </div>
       )}
