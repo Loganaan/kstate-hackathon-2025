@@ -45,6 +45,12 @@ export default function SideButtons() {
   const handleEmailSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setSubmitError(null);
+    // Email format validation
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(email)) {
+      setSubmitError("Please enter a valid email address.");
+      return;
+    }
     try {
       await addDoc(collection(db, "WaitListEmails"), {
         email,
