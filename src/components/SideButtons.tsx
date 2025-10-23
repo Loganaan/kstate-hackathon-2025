@@ -196,7 +196,7 @@ export default function SideButtons() {
                   style={{ accentColor: '#4CA626' }}
                 />
                 <label htmlFor="dont-show-again" className="text-gray-700 dark:text-gray-200 text-sm cursor-pointer select-none">
-                  Don't show again
+                  Don&#39;t show again
                 </label>
               </div>
             )}
