@@ -137,7 +137,7 @@ export default function About() {
 
             <div className="bg-gray-50 dark:bg-gray-800 rounded-lg p-6 sm:p-8 transition-all hover:shadow-lg">
               <h3 className="text-xl sm:text-2xl font-semibold text-black dark:text-white mb-3 text-center">
-                Christian Ramierz-Chavez
+                Christian Ramirez-Chavez
               </h3>
               <div className="flex justify-center mt-4 gap-4">
                 <Link
